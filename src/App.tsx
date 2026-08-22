@@ -5,6 +5,7 @@ import { useFlightStore } from './store/flightStore'
 import { NoFlightScreen } from './ui/NoFlightScreen'
 import { FlightExecutionScreen } from './ui/flight-execution/FlightExecutionScreen'
 import { PlanningScreen } from './ui/planning/PlanningScreen'
+import { PrintView } from './ui/print/PrintView'
 
 type Mode = 'planning' | 'execution'
 
@@ -13,6 +14,9 @@ function AppShell() {
   const loadFlights = useFlightStore((s) => s.loadAll)
   const isLoaded = useFlightStore((s) => s.isLoaded)
   const currentFlight = useFlightStore((s) => s.currentFlight)
+  const aircraft = useAircraftStore((s) =>
+    currentFlight ? s.aircraft.find((a) => a.id === currentFlight.aircraftId) : undefined,
+  )
 
   const [mode, setMode] = useState<Mode>('planning')
   const lastFlightIdRef = useRef<string | undefined>(undefined)
@@ -33,12 +37,24 @@ function AppShell() {
   }, [currentFlight])
 
   if (!isLoaded) return null
-  if (!currentFlight) return <NoFlightScreen />
 
-  return mode === 'planning' ? (
-    <PlanningScreen onOpenExecution={() => setMode('execution')} />
-  ) : (
-    <FlightExecutionScreen onOpenPlanning={() => setMode('planning')} />
+  return (
+    <>
+      {/* Auf dem Bildschirm sichtbarer App-Chrome — wird beim Drucken
+          komplett ausgeblendet (siehe .no-print in index.css). */}
+      <div className="no-print">
+        {!currentFlight ? (
+          <NoFlightScreen />
+        ) : mode === 'planning' ? (
+          <PlanningScreen onOpenExecution={() => setMode('execution')} />
+        ) : (
+          <FlightExecutionScreen onOpenPlanning={() => setMode('planning')} />
+        )}
+      </div>
+      {/* Nur im Druck sichtbar (siehe .print-only in index.css) — bleibt
+          über den Mode-Wechsel hinweg an denselben Flug gebunden. */}
+      <PrintView flight={currentFlight} aircraft={aircraft} />
+    </>
   )
 }
 

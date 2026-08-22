@@ -16,6 +16,10 @@ interface FlightStoreState {
 
   loadAll: () => Promise<void>
   createNew: (input: Omit<Flight, 'id' | 'legs' | 'legActuals'>) => Promise<Flight>
+  /** Legt einen Flug aus vollständigen (importierten) Daten an — anders
+   * als createNew() bleiben Legs/ATOs dabei erhalten. Vergibt immer eine
+   * neue id, damit ein Import nie einen bestehenden Flug überschreibt. */
+  importFlight: (input: Omit<Flight, 'id'>) => Promise<Flight>
   open: (id: string) => void
   closeCurrent: () => void
   duplicateAsTemplate: (id: string) => Promise<Flight | undefined>
@@ -50,6 +54,13 @@ export const useFlightStore = create<FlightStoreState>((set, get) => ({
     const flight: Flight = { ...input, id: generateId(), legs: [], legActuals: [] }
     await db.putFlight(flight)
     set((state) => ({ flights: [...state.flights, flight], currentFlight: flight }))
+    return flight
+  },
+
+  importFlight: async (input) => {
+    const flight: Flight = { ...input, id: generateId() }
+    await db.putFlight(flight)
+    set((state) => ({ flights: [...state.flights, flight] }))
     return flight
   },
 

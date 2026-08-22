@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import type { Aircraft } from '../../domain/types'
 import { useAircraftStore } from '../../store/aircraftStore'
+import { ImportValidationError, parseAircraftImport, serializeAircraft } from '../../store/exportImport'
+import { ImportButton } from '../components/ImportButton'
+import { downloadJsonFile, safeFileNamePart } from '../lib/fileIO'
 import { AircraftForm } from './AircraftForm'
 
-/** Flugzeugmuster-Verwaltung: anlegen, bearbeiten, duplizieren, löschen.
- * Muster sind unabhängig vom einzelnen Flug gespeichert. */
+/** Flugzeugmuster-Verwaltung: anlegen, bearbeiten, duplizieren, löschen,
+ * sowie Export/Import als JSON-Datei. Muster sind unabhängig vom
+ * einzelnen Flug gespeichert. */
 export function AircraftManager() {
   const aircraft = useAircraftStore((s) => s.aircraft)
   const add = useAircraftStore((s) => s.add)
@@ -13,6 +17,7 @@ export function AircraftManager() {
   const duplicate = useAircraftStore((s) => s.duplicate)
 
   const [editingId, setEditingId] = useState<string | 'new' | undefined>(undefined)
+  const [importError, setImportError] = useState<string | undefined>(undefined)
   const editing = editingId === 'new' ? undefined : aircraft.find((a) => a.id === editingId)
 
   if (editingId !== undefined) {
@@ -53,7 +58,7 @@ export function AircraftManager() {
               {a.registration}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setEditingId(a.id)}
@@ -72,6 +77,19 @@ export function AircraftManager() {
             </button>
             <button
               type="button"
+              onClick={() =>
+                downloadJsonFile(
+                  `vfrmate-muster-${safeFileNamePart(a.registration || a.type)}.json`,
+                  serializeAircraft(a),
+                )
+              }
+              className="rounded border px-2 py-1 text-xs"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            >
+              Exportieren
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 if (confirm(`"${a.type}" (${a.registration}) wirklich löschen?`)) void remove(a.id)
               }}
@@ -83,14 +101,34 @@ export function AircraftManager() {
           </div>
         </div>
       ))}
-      <button
-        type="button"
-        onClick={() => setEditingId('new')}
-        className="self-start rounded-lg px-4 py-2 text-sm font-semibold"
-        style={{ backgroundColor: 'var(--signal-active-border)', color: '#05070b' }}
-      >
-        + Neues Muster
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setEditingId('new')}
+          className="rounded-lg px-4 py-2 text-sm font-semibold"
+          style={{ backgroundColor: 'var(--signal-active-border)', color: '#05070b' }}
+        >
+          + Neues Muster
+        </button>
+        <ImportButton
+          label="Muster importieren"
+          onError={setImportError}
+          onFile={(contents) => {
+            try {
+              const data = parseAircraftImport(contents)
+              void add(data)
+              setImportError(undefined)
+            } catch (err) {
+              setImportError(err instanceof ImportValidationError ? err.message : 'Import fehlgeschlagen.')
+            }
+          }}
+        />
+      </div>
+      {importError && (
+        <p className="text-sm" style={{ color: 'var(--signal-warning-text)' }}>
+          ⚠ {importError}
+        </p>
+      )}
     </div>
   )
 }

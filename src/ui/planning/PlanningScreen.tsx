@@ -1,5 +1,7 @@
 import { useAircraftStore } from '../../store/aircraftStore'
 import { useFlightStore } from '../../store/flightStore'
+import { serializeFlight } from '../../store/exportImport'
+import { downloadJsonFile, safeFileNamePart } from '../lib/fileIO'
 import { Accordion } from '../components/Accordion'
 import { ThemeToggleButton } from '../components/ThemeToggleButton'
 import { FrequenciesPanel } from '../panels/FrequenciesPanel'
@@ -55,6 +57,24 @@ export function PlanningScreen({ onOpenExecution }: PlanningScreenProps) {
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Als Vorlage duplizieren
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              downloadJsonFile(`vfrmate-flug-${safeFileNamePart(flight.name || flight.date)}.json`, serializeFlight(flight))
+            }
+            className="rounded border px-3 py-1.5 text-xs"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            Exportieren
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded border px-3 py-1.5 text-xs"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            Drucken
           </button>
           <button
             type="button"

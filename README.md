@@ -122,6 +122,36 @@ Ein neu angelegter Flug öffnet zuerst die Planung; sobald er Legs hat,
 öffnet er beim nächsten Mal direkt in der Flugdurchführung. Beide
 Bildschirme lassen sich jederzeit über die Kopfzeile wechseln.
 
+### Export/Import und Druckansicht
+
+- `store/exportImport.ts` — reine Serialisierung/Validierung (kein DOM):
+  `serializeAircraft`/`serializeFlight` bauen ein JSON mit
+  `{kind, version, data}`; `parseAircraftImport`/`parseFlightImport`
+  akzeptieren sowohl dieses Format als auch ein "nacktes" Objekt, prüfen
+  die Pflichtfelder und werfen `ImportValidationError` mit einer
+  verständlichen Fehlerliste, sonst. Die `id` wird beim Import immer
+  verworfen und neu vergeben — ein Import überschreibt nie ein
+  bestehendes Muster/Flug.
+- `ui/lib/fileIO.ts` — DOM-Gegenstück: Datei herunterladen
+  (`downloadJsonFile`) bzw. eine ausgewählte Datei einlesen
+  (`readFileAsText`). "Exportieren"/"…importieren" gibt es in der
+  Flugzeugmuster-Verwaltung und in der Planungsansicht.
+- `ui/print/PrintView.tsx` — eine eigenständige, immer im Hintergrund
+  gerenderte A4-Seite (`.print-only`/`.no-print` in `index.css`), die nur
+  bei `window.print()` sichtbar wird. Bewusst in festen
+  Schwarz-auf-Weiß-Farben statt der Theme-Variablen, damit der Ausdruck
+  unabhängig vom Nacht-/Tagmodus lesbar bleibt. Zeigt alle
+  Leg-Detailspalten (TC, MH, Wind, VAR, TAS, GS, Distanz, Zeit, ETO, ATO,
+  Flughöhe, Bemerkungen) plus Kraftstoff-/Massen-/Streckenzusammenfassung
+  und Frequenzen — der Pflichthinweis steht auch hier noch einmal in der
+  Fußzeile.
+
+**PWA-Offlinefähigkeit verifiziert:** Mit Playwright (`context.setOffline(true)`,
+also vollständig gekapptes Netzwerk) neu geladen, lädt die App
+ausschließlich aus dem Service-Worker-Cache und ein kompletter
+Anlegen-Flow (Muster + Flug + Legs über IndexedDB) läuft ohne jeden
+Netzzugriff durch.
+
 ## Entwicklung
 
 ```bash
@@ -146,6 +176,11 @@ npx vitest run    # Unit-Tests
   (anlegen/umbenennen/umsortieren/löschen, Großkreisrechnung aus
   Koordinaten), globalen Standardwerten mit Override-Kennzeichnung pro
   Leg, und vollständiger Flugzeugmuster-Verwaltung.
+- **Phase 5 (abgeschlossen):** PWA-Verifikation (per Playwright mit
+  vollständig gekapptem Netzwerk bestätigt: App lädt aus dem
+  Service-Worker-Cache und IndexedDB-Schreibzugriffe funktionieren ohne
+  jede Verbindung), Export/Import einzelner Flüge und Flugzeugmuster als
+  JSON-Datei, Druckansicht als eigenständige A4-Seite im
+  Papierformular-Layout.
 
-PWA-Feinschliff, Export/Import und Druckansicht folgen in der nächsten
-Phase.
+Die App ist damit funktional vollständig gemäß Auftrag.

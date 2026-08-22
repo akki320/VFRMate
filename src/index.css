@@ -105,3 +105,35 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/*
+ * Druckansicht: eine A4-Seite im Layout des Papierformulars, als Backup
+ * für den Flug. .print-only ist auf dem Bildschirm unsichtbar und
+ * erscheint ausschließlich im Druck; alles, was auf dem Bildschirm
+ * sichtbar ist (App-Chrome, Formulare, Accordions), wird beim Drucken
+ * ausgeblendet — dafür sorgt .no-print auf dem Wurzelelement der
+ * jeweiligen Bildschirmkomponente selbst, siehe App.tsx.
+ */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+}

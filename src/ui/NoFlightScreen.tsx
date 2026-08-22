@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useFlightStore } from '../store/flightStore'
+import { ImportValidationError, parseFlightImport } from '../store/exportImport'
 import { Accordion } from './components/Accordion'
+import { ImportButton } from './components/ImportButton'
 import { ThemeToggleButton } from './components/ThemeToggleButton'
 import { AircraftManager } from './planning/AircraftManager'
 import { createDemoFlight } from './seed/createDemoFlight'
@@ -12,7 +14,9 @@ export function NoFlightScreen() {
   const flights = useFlightStore((s) => s.flights)
   const open = useFlightStore((s) => s.open)
   const createNew = useFlightStore((s) => s.createNew)
+  const importFlight = useFlightStore((s) => s.importFlight)
   const [creatingDemo, setCreatingDemo] = useState(false)
+  const [importError, setImportError] = useState<string | undefined>(undefined)
 
   const handleCreateNew = () => {
     void createNew({
@@ -86,6 +90,24 @@ export function NoFlightScreen() {
         >
           {creatingDemo ? 'Wird angelegt …' : 'Beispielflug zum Ausprobieren anlegen'}
         </button>
+        <ImportButton
+          label="Flug importieren"
+          onError={setImportError}
+          onFile={(contents) => {
+            try {
+              const data = parseFlightImport(contents)
+              void importFlight(data)
+              setImportError(undefined)
+            } catch (err) {
+              setImportError(err instanceof ImportValidationError ? err.message : 'Import fehlgeschlagen.')
+            }
+          }}
+        />
+        {importError && (
+          <p className="text-sm" style={{ color: 'var(--signal-warning-text)' }}>
+            ⚠ {importError}
+          </p>
+        )}
       </div>
 
       <div className="rounded border" style={{ borderColor: 'var(--border)' }}>

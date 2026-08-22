@@ -31,6 +31,21 @@ function makeFlightInput(
 }
 
 describe('useFlightStore', () => {
+  it('importFlight adds a flight with a fresh id, preserving legs/legActuals, without opening it', async () => {
+    const imported = await useFlightStore.getState().importFlight({
+      ...makeFlightInput(),
+      legs: [{ id: 'leg-1', waypoint: 'EDXY', plannedAltitude: '2500 ft', tc: 90, distanceNm: 30 }],
+      legActuals: [{ legId: 'leg-1', atoUtcMin: 500 }],
+    })
+
+    expect(imported.id).toBeTruthy()
+    expect(imported.legs).toHaveLength(1)
+    expect(imported.legActuals).toEqual([{ legId: 'leg-1', atoUtcMin: 500 }])
+    expect(useFlightStore.getState().flights).toEqual([imported])
+    expect(useFlightStore.getState().currentFlight).toBeUndefined()
+    expect(await getFlight(imported.id)).toEqual(imported)
+  })
+
   it('creates a flight, opens it as currentFlight and persists it', async () => {
     const created = await useFlightStore.getState().createNew(makeFlightInput())
 
