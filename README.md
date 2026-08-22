@@ -4,6 +4,12 @@ Offlinefähige Progressive Web App für den deutschen Flugdurchführungsplan
 VFR — Planung am Schreibtisch, Nutzung im Cockpit. Kein Backend, keine
 Anmeldung, keine Cloud: alle Daten bleiben lokal auf dem Gerät.
 
+**Live:** https://akki320.github.io/VFRMate/ (Deployment über GitHub
+Pages + Actions, siehe `.github/workflows/deploy-pages.yml`; muss einmalig
+unter Settings → Pages → Source auf "GitHub Actions" gestellt werden,
+danach deployt jeder Push nach `main` automatisch). Auf einem Tablet/Smartphone
+öffnen und über den Browser "Zum Startbildschirm hinzufügen" installieren.
+
 ## Stack
 
 - React + TypeScript + Vite

@@ -5,7 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // GitHub Pages serves this repo under /VFRMate/, not at the domain
+  // root — only the production build needs that prefix, `npm run dev`
+  // keeps serving at "/".
+  base: command === 'build' ? '/VFRMate/' : '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -13,12 +17,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        id: '/',
+        // Relative to the manifest's own URL, not an absolute "/" —
+        // works regardless of the subpath the app is deployed under
+        // (GitHub Pages subpath today, a custom domain at "/" tomorrow).
+        id: '.',
         name: 'VFRMate',
         short_name: 'VFRMate',
         description:
           'Offlinefähige Flugplanung und Flugdurchführung nach Sichtflugregeln (VFR).',
-        start_url: '/',
+        start_url: '.',
+        scope: '.',
         display: 'standalone',
         orientation: 'any',
         background_color: '#0f172a',
@@ -60,4 +68,4 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],
   },
-})
+}))
