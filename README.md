@@ -36,12 +36,16 @@ vollständig unit-getestet:
   ausschließlich als UTC-Minuten seit Mitternacht gespeichert, nie als
   `Date`.
 - `navigation.ts` — Winddreieck (WCA/GS), Kurskette (TC→TH→MH→MC),
-  Zeiten-/ETO-Kette, Re-Estimate nach ATO.
-- `fuel.ts` — Mindestbedarf, sichere Flugzeit, Warnung bei knappem Vorrat.
-- `massBalance.ts` — Momentbildung, Schwerpunktlage, Point-in-Polygon-Prüfung
-  gegen das CG-Envelope.
-- `runway.ts` — Start-/Landestrecke: Tabelleninterpolation plus Zuschläge
-  für Höhe, Temperatur, Wind, Neigung, Gras, Oberflächenzustand.
+  Zeiten-/ETO-Kette, Re-Estimate nach ATO. TH (True Heading) ist nur eine
+  interne Zwischengröße zur Ableitung von MH — auf dem Papierformular gibt
+  es dafür keine eigene Spalte ("rwK" steht dort für TC selbst).
+- `greatCircle.ts` — Großkreisrechnung (Haversine + Anfangspeilung) für
+  TC/Distanz aus Koordinaten. Aktuell nicht an die UI angebunden.
+- `fuel.ts` / `massBalance.ts` / `runway.ts` — Kraftstoffbedarf, Masse &
+  Schwerpunkt (Point-in-Polygon gegen das CG-Envelope), Start-/
+  Landestrecke. Die Berechnungslogik bleibt vollständig erhalten und
+  getestet, ist aber aktuell nicht an die UI angebunden (siehe
+  "Vereinfachung" unten) — für eine spätere Wiederverwendung.
 - `rounding.ts` / `format.ts` — einheitliche Rundungs- und
   Zeitformatierungskonventionen (Kurse: ganze Grad, Zeiten: ganze Minuten,
   Distanzen: eine Nachkommastelle, Massen: ganze Kilogramm; Anzeige immer
@@ -51,9 +55,11 @@ vollständig unit-getestet:
 
 - `db.ts` — dünner IndexedDB-Wrapper (via `idb`) mit zwei Object Stores
   (`aircraft`, `flights`). Keine Berechnungslogik, nur CRUD.
-- `aircraftStore.ts` — Zustand-Store für Flugzeugmuster: anlegen,
-  bearbeiten, duplizieren, löschen. Muster sind unabhängig vom Flug
-  gespeichert.
+- `aircraftStore.ts` — Zustand-Store für Flugzeugmuster (anlegen,
+  bearbeiten, duplizieren, löschen). Bleibt im Code für eine spätere
+  Wiederverwendung, ist aber aktuell nicht an die UI angebunden — der
+  Flugkopf trägt LFZ-Muster/-Kennzeichen stattdessen als Freitext direkt
+  am Flug (`Flight.aircraftType`/`aircraftRegistration`).
 - `flightStore.ts` — Zustand-Store für die Flugliste + den aktuell
   geöffneten Flug. Jede Mutation (Leg ändern, ATO erfassen, ...) läuft über
   `patchCurrentFlight` und schreibt **sofort** nach IndexedDB — kein
@@ -62,71 +68,56 @@ vollständig unit-getestet:
 - Getestet mit `fake-indexeddb` unter Vitest (Node-Umgebung), inklusive
   Crash-/Reload-Sicherheit von ATO-Einträgen.
 
-### Bildschirm 1: Flugdurchführung (`src/ui/flight-execution/`)
+### Die Flugansicht (`src/ui/flight/`)
 
-Die Kernansicht, die im Flug offen ist — eine Zeile pro Kontrollpunkt mit
-genau den Spalten, die im Flug gebraucht werden: Kontrollpunkt,
-Sicherh.-Höhe, MH, Zeit (Abschnitt/Rest), ETO, ATO.
+Nur noch eine einzige Ansicht für einen geöffneten Flug — Planung und
+Flugdurchführung sind nicht mehr getrennt. Sie bildet das Papierformular
+("Flugdurchführungsplan VFR") direkt als editierbare Tabelle ab: eine
+Kopfzeile mit den Flugstammdaten, darunter eine Zeile pro Kontrollpunkt.
 
-- `useFlightExecutionViewModel.ts` — verknüpft den aktuellen Flug mit
-  `computeFlightLegs`/`reEstimateLegs`/`checkFuelPlan` und leitet die
-  aktive Zeile, die Re-Estimate-Deltas und die Warnschwellen ab. Nichts
-  davon wird gespeichert.
-- `LegTable.tsx`/`LegRow.tsx` — die aktive Zeile (nächster
-  anzufliegender Kontrollpunkt) ist hervorgehoben und bleibt beim Scrollen
-  zusammen mit der Kopfzeile oben fixiert (`position: sticky`). Tap auf den
-  Kontrollpunktnamen klappt die Detailwerte auf (TC, WCA, MC, rwK, Wind,
-  VAR, TAS, GS, Distanz Abschnitt/gesamt, Flughöhe, Bemerkungen).
+- `FlightHeader.tsx` — Bezeichnung, Datum, Flugplätze, LFZ-Muster/-Kennz.
+  (Freitext), Übergangshöhe/-level, ETD/ATD/SS sowie die berechneten
+  ETA/ATA — genau die Felder aus dem Kopf des Papierformulars.
+- `columns.ts` — die Tabellenspalten, 1:1 aus dem Papierformular
+  übernommen (Sicherh.-Höhe, geplante Flughöhe, TAS, Wind, TC (rwK), WCA,
+  VAR (MW), MH (mwSK), MC (mwK), Entfernung Abschnitt/Gesamt/Rest, GS
+  (VG), Zeit Abschnitt/Gesamt/Rest, ETO, Bemerkungen). Kontrollpunkt und
+  ATO sind immer sichtbar, alle anderen Spalten lassen sich über
+  `ColumnVisibilityMenu.tsx`/`useColumnVisibility.ts` **beliebig
+  ein-/ausblenden** — eine reine Anzeigepräferenz je Gerät, in
+  `localStorage` gespeichert.
+- `LegTable.tsx`/`LegTableRow.tsx` — jede Zelle direkt editierbar
+  (Eingabefelder für Rohwerte, reiner Text für berechnete Werte), Legs
+  anlegen/löschen/umsortieren (Auf-/Ab-Buttons). Die aktive Zeile
+  (nächster anzufliegender Kontrollpunkt) ist hervorgehoben und bleibt
+  beim Scrollen zusammen mit der Kopfzeile oben fixiert.
 - `AtoCell.tsx` — ein Tap auf "Überflug" trägt die aktuelle UTC-Zeit als
-  ATO ein und schaltet zur nächsten Zeile weiter; ein bereits erfasstes
-  ATO lässt sich per Long-Press manuell korrigieren.
+  ATO ein und schaltet zur nächsten Zeile weiter; die ETOs aller
+  folgenden Legs werden dabei automatisch neu geschätzt (Delta farbig
+  neben der ETO). Ein bereits erfasstes ATO lässt sich per Long-Press
+  manuell korrigieren.
 - `RemainingHud.tsx` — Restzeit, Restdistanz und die laufende UTC-Uhr,
-  fest am unteren Bildschirmrand, unabhängig vom Scrollstand.
-- `ui/panels/` (geteilt mit Bildschirm 2) — Frequenzen, Wetter/Freigaben,
-  Kraftstoff, Masse & Schwerpunkt, Start-/Landestrecke, AIP-Notizen. In
-  Bildschirm 1 stecken sie hinter zugeklappten Accordions, damit sie im
-  Flug nicht mit der Kerntabelle konkurrieren; in Bildschirm 2 sind es
-  offene Formularabschnitte — dieselben Komponenten, nur anders gerahmt.
-- Warnhinweise (rot, nur als Signal) erscheinen, wenn die geschätzte
-  Restflugzeit die sichere Flugzeit überschreitet oder die geschätzte
-  Ankunft nach Sonnenuntergang liegt.
-
-Gestaltung: Nachtmodus (dunkel) ist Standard, ein Tagmodus mit sehr hohem
-Kontrast lässt sich umschalten (`ui/theme/`). Alle Zahlenwerte stehen in
-einer tabellarischen Monospace-Schrift. Im Flug bediente Elemente (Tabelle,
-Überflug-Button) haben mindestens 56 px Touchziel; Formularfelder in den
-Accordions sind bewusst klein und zurückhaltend, weil sie nur am Boden
-gebraucht werden.
-
-### Bildschirm 2: Planung (`src/ui/planning/`)
-
-Am Schreibtisch: alle Formularabschnitte offen statt hinter Accordions —
-hier wird geplant, nicht im Flug bedient.
-
-- `FlightMetaForm.tsx` — Bezeichnung, Datum, Flugplätze, Muster, ETD/ATD,
-  Übergangshöhe/-level, Sonnenuntergang, optionale Koordinaten des
-  Startflugplatzes (Basispunkt für die Großkreisrechnung des ersten Legs).
-- `GlobalDefaultsForm.tsx` — TAS/Wind/VAR einmal global setzen.
-- `LegList.tsx`/`LegEditorRow.tsx` — Legs anlegen, umbenennen, löschen,
-  umsortieren (Drag-and-Drop **und** Auf/Ab-Buttons, weil natives
-  HTML5-Drag-and-Drop für sich genommen nicht tastaturbedienbar ist). Pro
-  Leg optional Koordinaten; ein Button leitet TC/Distanz per
-  `domain/greatCircle.ts` (Haversine + Anfangspeilung) aus der Koordinate
-  dieses Punkts und der des vorherigen Punkts ab. TAS/Wind/VAR sind pro
-  Leg über Checkboxen überschreibbar — deaktiviert, erbt der Leg wieder
-  den globalen Wert; aktiv weichende Legs sind als "(weicht ab)"
-  gekennzeichnet.
-- `AircraftManager.tsx`/`AircraftForm.tsx` — Flugzeugmuster anlegen,
-  bearbeiten, duplizieren, löschen; unabhängig vom einzelnen Flug
-  gespeichert (auch ohne offenen Flug erreichbar, z.B. von der Flugliste
-  aus). Dynamische Listeneditoren für CG-Envelope-Punkte und
-  Start-/Landestreckentabellen.
+  fest am unteren Bildschirmrand.
+- Warnhinweis (rot, nur als Signal), wenn die geschätzte Ankunft nach
+  Sonnenuntergang liegt.
 - Der Pflichthinweis ("Hilfsmittel für die Planung, ersetzt keine
   amtlichen Unterlagen") steht als Fußzeile am Ende der Ansicht.
 
-Ein neu angelegter Flug öffnet zuerst die Planung; sobald er Legs hat,
-öffnet er beim nächsten Mal direkt in der Flugdurchführung. Beide
-Bildschirme lassen sich jederzeit über die Kopfzeile wechseln.
+Gestaltung: Nachtmodus (dunkel) ist Standard, ein Tagmodus mit sehr hohem
+Kontrast lässt sich umschalten (`ui/theme/`). Alle Zahlenwerte stehen in
+einer tabellarischen Monospace-Schrift. Der Überflug-Button hat mindestens
+56 px Touchziel; Kopfzeilen-Formularfelder sind bewusst klein, weil sie
+nur am Boden gebraucht werden.
+
+**Vereinfachung (nach Nutzer-Feedback):** Kraftstoff, Masse & Schwerpunkt,
+Start-/Landestrecke, Frequenzen/Wetter, AIP-Notizen und die
+Flugzeugmuster-Verwaltung wurden aus der UI entfernt — der ursprüngliche
+mehrseitige Aufbau (getrennte Planungs-/Flugdurchführungs-Bildschirme,
+Accordion-Formulare, Muster-CRUD) war zu komplex für den eigentlichen
+Zweck: eine Tabelle wie auf Papier, mit Spaltenauswahl. Die
+Berechnungslogik dafür bleibt vollständig im Code (`domain/fuel.ts`,
+`massBalance.ts`, `runway.ts`, `greatCircle.ts`, `store/aircraftStore.ts`)
+für eine spätere Wiederverwendung.
 
 ### Export/Import und Druckansicht
 
@@ -140,17 +131,15 @@ Bildschirme lassen sich jederzeit über die Kopfzeile wechseln.
   bestehendes Muster/Flug.
 - `ui/lib/fileIO.ts` — DOM-Gegenstück: Datei herunterladen
   (`downloadJsonFile`) bzw. eine ausgewählte Datei einlesen
-  (`readFileAsText`). "Exportieren"/"…importieren" gibt es in der
-  Flugzeugmuster-Verwaltung und in der Planungsansicht.
+  (`readFileAsText`). "Exportieren" (Flugansicht) / "Flug importieren"
+  (Flugliste).
 - `ui/print/PrintView.tsx` — eine eigenständige, immer im Hintergrund
   gerenderte A4-Seite (`.print-only`/`.no-print` in `index.css`), die nur
   bei `window.print()` sichtbar wird. Bewusst in festen
   Schwarz-auf-Weiß-Farben statt der Theme-Variablen, damit der Ausdruck
-  unabhängig vom Nacht-/Tagmodus lesbar bleibt. Zeigt alle
-  Leg-Detailspalten (TC, MH, Wind, VAR, TAS, GS, Distanz, Zeit, ETO, ATO,
-  Flughöhe, Bemerkungen) plus Kraftstoff-/Massen-/Streckenzusammenfassung
-  und Frequenzen — der Pflichthinweis steht auch hier noch einmal in der
-  Fußzeile.
+  unabhängig vom Nacht-/Tagmodus lesbar bleibt. Zeigt immer **alle**
+  Spalten (unabhängig von der Bildschirm-Spaltenauswahl) plus den
+  Pflichthinweis in der Fußzeile.
 
 **PWA-Offlinefähigkeit verifiziert:** Mit Playwright (`context.setOffline(true)`,
 also vollständig gekapptes Netzwerk) neu geladen, lädt die App
@@ -188,5 +177,11 @@ npx vitest run    # Unit-Tests
   jede Verbindung), Export/Import einzelner Flüge und Flugzeugmuster als
   JSON-Datei, Druckansicht als eigenständige A4-Seite im
   Papierformular-Layout.
+- **Phase 6 (abgeschlossen):** Vereinfachung nach Nutzer-Feedback — der
+  mehrseitige Aufbau (Planung/Flugdurchführung getrennt, Accordions,
+  Muster-Verwaltung) wich einer einzigen, dem offiziellen
+  LBA-Papierformular nachgebauten Tabelle mit frei ein-/ausblendbaren
+  Spalten. ATO-Tap → automatische ETO-Neuschätzung blieb erhalten.
 
-Die App ist damit funktional vollständig gemäß Auftrag.
+Die App ist damit funktional vollständig gemäß Auftrag, in der vom
+Nutzer gewünschten vereinfachten Form.

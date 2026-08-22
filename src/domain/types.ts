@@ -218,10 +218,12 @@ export interface ComputedLeg {
   mc: number
   /** Magnetic Heading = TH − VAR, 0–359. */
   mh: number
-  /** Rechtweisender Steuerkurs (True Heading) = TC + WCA, 0–359. */
-  rwK: number
-  /** Missweisender Steuerkurs = MH (Alias, deutsche Fluglehrer-Terminologie). */
-  mwK: number
+  /**
+   * True Heading = TC + WCA, 0–359. Nur eine Zwischengröße zur Ableitung
+   * von MH — auf dem Papierformular gibt es dafür keine eigene Spalte
+   * ("rwK" steht dort für TC selbst, nicht für TH; siehe Leg.tc).
+   */
+  th: number
   /** Groundspeed in kt. */
   gs: number
   /** Flugzeit dieses Abschnitts in Minuten (gerundet). */
@@ -275,7 +277,16 @@ export interface Flight {
   transitionLevel: string
   /** Sonnenuntergang (SS) am Zielort, UTC-Minuten seit Mitternacht. */
   sunsetUtcMin?: UtcMinutes
-  aircraftId: string
+  /** LFZ-Muster, z.B. "Cessna 172S". Freitext statt einer verwalteten
+   * Aircraft-Referenz — die Muster-Verwaltung (aircraftStore/db) bleibt
+   * im Code für eine spätere Wiederverwendung, ist aber aktuell nicht
+   * an die UI angebunden. */
+  aircraftType?: string
+  /** LFZ-Kennzeichen, z.B. "D-EABC". */
+  aircraftRegistration?: string
+  /** Nur noch für Altdaten/spätere Wiederverwendung der Aircraft-Muster-
+   * Verwaltung; die aktuelle UI liest/schreibt dieses Feld nicht mehr. */
+  aircraftId?: string
   /** Globale Standardwerte für TAS/Wind/VAR, pro Leg überschreibbar
    * (siehe Leg.tasKt/wind/variationDeg). */
   globalDefaults: FlightGlobalDefaults
@@ -283,11 +294,12 @@ export interface Flight {
   legActuals: LegActual[]
 
   /**
-   * Restliche Formularabschnitte des Flugdurchführungsplans. In
-   * Bildschirm 1 stecken sie hinter zugeklappten Accordion-Panels, in
-   * Bildschirm 2 als eigene Formularabschnitte — beides bearbeitet
-   * dieselben Felder. Alles optional: ein Flug kann angelegt werden,
-   * bevor diese Angaben vorliegen.
+   * Restliche Formularabschnitte des Flugdurchführungsplans
+   * (Kraftstoff, Masse & Schwerpunkt, Start-/Landestrecke, Frequenzen,
+   * Wetter, AIP-Notizen). Die Berechnungslogik dafür bleibt im Code
+   * (fuel.ts, massBalance.ts, runway.ts), ist aber aktuell nicht an die
+   * UI angebunden — die App zeigt nur noch die Leg-Tabelle. Alles
+   * optional, für eine spätere Wiederverwendung.
    */
   fuelPlan?: FuelPlan
   massBalanceLoad?: MassBalance

@@ -3,9 +3,9 @@ import type { ChangeEvent } from 'react'
 import { formatUtcMinutes, parseUtcMinutes } from '../../domain/format'
 
 /**
- * Kompakte, zurückhaltende Formularfelder für alles, was nur am Boden
- * gebraucht wird (Accordion-Inhalte, Planungsformulare) — bewusst klein,
- * im Gegensatz zu den sehr großen Touchziel-Elementen der Kerntabelle.
+ * Kompakte, zurückhaltende Formularfelder für die Kopfzeile — bewusst
+ * klein, im Gegensatz zu den großen Touchziel-Elementen der Leg-Tabelle
+ * (ATO-Button etc.).
  */
 
 const fieldClass =
@@ -76,51 +76,6 @@ export function TextField({ id, label, value, onChange, placeholder }: TextField
         type="text"
         value={value ?? ''}
         placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${fieldClass} font-sans`}
-        style={fieldStyle}
-      />
-    </FieldWrapper>
-  )
-}
-
-interface CheckboxFieldProps {
-  id: string
-  label: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}
-
-export function CheckboxField({ id, label, checked, onChange }: CheckboxFieldProps) {
-  return (
-    <label htmlFor={id} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4"
-      />
-      {label}
-    </label>
-  )
-}
-
-interface TextAreaFieldProps {
-  id: string
-  label: string
-  value: string | undefined
-  onChange: (value: string) => void
-  rows?: number
-}
-
-export function TextAreaField({ id, label, value, onChange, rows = 4 }: TextAreaFieldProps) {
-  return (
-    <FieldWrapper label={label} htmlFor={id}>
-      <textarea
-        id={id}
-        value={value ?? ''}
-        rows={rows}
         onChange={(e) => onChange(e.target.value)}
         className={`${fieldClass} font-sans`}
         style={fieldStyle}

@@ -1,48 +1,39 @@
 import { useMemo } from 'react'
-import { useAircraftStore } from '../../store/aircraftStore'
 import { useFlightStore } from '../../store/flightStore'
-import { computeFlightLegs, reEstimateLegs } from '../../domain/navigation'
-import { checkFuelPlan } from '../../domain/fuel'
-import type { ComputedLeg, Flight, Leg, ReEstimatedLeg } from '../../domain/types'
+import { computeFlightLegs, reEstimateLegs, resolveLeg } from '../../domain/navigation'
+import type { ComputedLeg, Flight, Leg, ReEstimatedLeg, ResolvedLegValues } from '../../domain/types'
 
-export interface FlightExecutionRow {
+export interface FlightTableRow {
   leg: Leg
   computed: ComputedLeg
   reEstimated: ReEstimatedLeg
+  resolved: ResolvedLegValues
   ato: number | undefined
   isActive: boolean
-  isPast: boolean
   /** Distanz vom Start bis einschließlich dieses Legs, in NM. */
   cumulativeDistanceNm: number
 }
 
-export interface FlightExecutionViewModel {
+export interface FlightTableViewModel {
   flight: Flight
-  rows: FlightExecutionRow[]
+  rows: FlightTableRow[]
   activeIndex: number
   /** Restzeit/Restdistanz ab jetzt (inkl. re-geschätzter Verschiebung),
    * bis zum Zielflugplatz. 0, wenn der Flug beendet ist. */
   remainingTimeMinEstimated: number
   remainingDistanceNm: number
-  safeEnduranceMin: number | undefined
-  fuelInsufficient: boolean | undefined
   /** Geschätzte Ankunftszeit am Ziel (letztes Leg, re-geschätzt). */
   estimatedArrivalUtcMin: number | undefined
-  exceedsSafeEndurance: boolean
   arrivesAfterSunset: boolean
 }
 
 /**
  * Verknüpft den aktuell geöffneten Flug mit der Domain-Berechnung
- * (computeFlightLegs/reEstimateLegs/checkFuelPlan) und leitet daraus die
- * konkreten Anzeige- und Warnwerte für Bildschirm 1 ab. Reine Ableitung,
- * nichts davon wird gespeichert.
+ * (computeFlightLegs/reEstimateLegs) und leitet daraus die Anzeigewerte
+ * für die Tabelle ab. Reine Ableitung, nichts davon wird gespeichert.
  */
-export function useFlightExecutionViewModel(): FlightExecutionViewModel | undefined {
+export function useFlightTableViewModel(): FlightTableViewModel | undefined {
   const flight = useFlightStore((state) => state.currentFlight)
-  const aircraft = useAircraftStore((state) =>
-    flight ? state.aircraft.find((a) => a.id === flight.aircraftId) : undefined,
-  )
 
   return useMemo(() => {
     if (!flight) return undefined
@@ -54,15 +45,15 @@ export function useFlightExecutionViewModel(): FlightExecutionViewModel | undefi
     const activeIndex = flight.legs.findIndex((leg) => !atoByLegId.has(leg.id))
 
     let cumulativeDistanceNm = 0
-    const rows: FlightExecutionRow[] = flight.legs.map((leg, index) => {
+    const rows: FlightTableRow[] = flight.legs.map((leg, index) => {
       cumulativeDistanceNm += leg.distanceNm
       return {
         leg,
         computed: computedLegs[index],
         reEstimated: reEstimated[index],
+        resolved: resolveLeg(flight, leg),
         ato: atoByLegId.get(leg.id),
         isActive: index === activeIndex,
-        isPast: activeIndex !== -1 ? index < activeIndex : true,
         cumulativeDistanceNm,
       }
     })
@@ -79,14 +70,6 @@ export function useFlightExecutionViewModel(): FlightExecutionViewModel | undefi
     const lastIndex = flight.legs.length - 1
     const estimatedArrivalUtcMin = lastIndex >= 0 ? reEstimated[lastIndex].revisedEtoUtcMin : undefined
 
-    const fuelCheck =
-      aircraft && flight.fuelPlan
-        ? checkFuelPlan(flight.fuelPlan, aircraft.fuelConsumption.cruiseLh)
-        : undefined
-
-    const exceedsSafeEndurance =
-      fuelCheck !== undefined && activeIndex !== -1 && remainingTimeMinEstimated > fuelCheck.safeEnduranceMin
-
     const arrivesAfterSunset =
       flight.sunsetUtcMin !== undefined &&
       estimatedArrivalUtcMin !== undefined &&
@@ -98,11 +81,8 @@ export function useFlightExecutionViewModel(): FlightExecutionViewModel | undefi
       activeIndex,
       remainingTimeMinEstimated,
       remainingDistanceNm,
-      safeEnduranceMin: fuelCheck?.safeEnduranceMin,
-      fuelInsufficient: fuelCheck?.insufficientFuel,
       estimatedArrivalUtcMin,
-      exceedsSafeEndurance,
       arrivesAfterSunset,
     }
-  }, [flight, aircraft])
+  }, [flight])
 }

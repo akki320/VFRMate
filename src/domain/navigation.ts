@@ -96,7 +96,7 @@ export function resolveLeg(flight: Flight, leg: Leg): ResolvedLegValues {
 
 /**
  * Berechnet für ein einzelnes Leg alle abgeleiteten Größen, die keine
- * Kenntnis von vorherigen/folgenden Legs benötigen (WCA, MC, MH, rwK, mwK,
+ * Kenntnis von vorherigen/folgenden Legs benötigen (WCA, MC, MH, TH,
  * GS, Abschnittszeit). Kumulative Werte (cumulativeTimeMin,
  * remainingTimeMin, remainingDistanceNm, ETO) liefert computeFlightLegs().
  */
@@ -107,8 +107,7 @@ export function computeLegKinematics(
   wca: number
   mc: number
   mh: number
-  rwK: number
-  mwK: number
+  th: number
   gs: number
   legTimeMin: number
 } {
@@ -118,8 +117,7 @@ export function computeLegKinematics(
     wca,
     mc,
     mh,
-    rwK: th,
-    mwK: mh,
+    th,
     gs,
     legTimeMin: legTime(leg.distanceNm, gs),
   }
@@ -155,8 +153,7 @@ export function computeFlightLegs(flight: Flight): ComputedLeg[] {
     wca: kinematics.wca,
     mc: kinematics.mc,
     mh: kinematics.mh,
-    rwK: kinematics.rwK,
-    mwK: kinematics.mwK,
+    th: kinematics.th,
     gs: kinematics.gs,
     legTimeMin: kinematics.legTimeMin,
     cumulativeTimeMin,

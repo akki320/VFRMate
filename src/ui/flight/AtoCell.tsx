@@ -12,22 +12,21 @@ interface AtoCellProps {
 }
 
 /**
- * ATO-Erfassung: ein Tap auf "Überflug" trägt die aktuelle UTC-Zeit ein.
- * Ein bereits erfasstes ATO lässt sich per Long-Press manuell korrigieren
- * (Tippfehler, verspätet nachgetragen) — ein einfacher Tap tut dort
- * bewusst nichts, damit man es nicht aus Versehen verstellt.
+ * ATO-Erfassung: ein Tap auf "Überflug" trägt die aktuelle UTC-Zeit ein
+ * und schaltet zur nächsten Zeile weiter (die folgenden ETOs werden dabei
+ * automatisch neu geschätzt, siehe useFlightTableViewModel). Ein bereits
+ * erfasstes ATO lässt sich per Long-Press manuell korrigieren — ein
+ * einfacher Tap tut dort bewusst nichts, damit man es nicht aus Versehen
+ * verstellt.
  */
 export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
   const recordAto = useFlightStore((s) => s.recordAto)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const timerRef = useRef<number | undefined>(undefined)
-  const longPressFiredRef = useRef(false)
 
   const startLongPress = () => {
-    longPressFiredRef.current = false
     timerRef.current = window.setTimeout(() => {
-      longPressFiredRef.current = true
       setDraft(ato !== undefined ? formatUtcMinutes(ato) : '')
       setEditing(true)
     }, LONG_PRESS_MS)
@@ -47,29 +46,23 @@ export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
 
   if (editing) {
     return (
-      <div className="flex items-center gap-1">
-        <input
-          type="text"
-          inputMode="numeric"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') commitEdit()
-            if (e.key === 'Escape') setEditing(false)
-          }}
-          onBlur={commitEdit}
-          placeholder="HH:MM"
-          aria-label="ATO korrigieren (HH:MM)"
-          className="mono-num w-20 rounded border px-2 py-1 text-base"
-          style={{
-            borderColor: 'var(--border-strong)',
-            backgroundColor: 'var(--bg-elevated)',
-            color: 'var(--text-primary)',
-          }}
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
-        />
-      </div>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commitEdit()
+          if (e.key === 'Escape') setEditing(false)
+        }}
+        onBlur={commitEdit}
+        placeholder="HH:MM"
+        aria-label="ATO korrigieren (HH:MM)"
+        className="mono-num w-20 rounded border px-2 py-1 text-base"
+        style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus
+      />
     )
   }
 
@@ -95,7 +88,7 @@ export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
       <button
         type="button"
         onClick={() => void recordAto(legId, currentUtcMinutes())}
-        className="transition-state w-full rounded-lg px-1 text-sm font-semibold sm:text-base"
+        className="transition-state mono-num w-full rounded-lg px-1 text-sm font-semibold sm:text-base"
         style={{ minHeight: 56, minWidth: 56, backgroundColor: 'var(--signal-active-border)', color: '#05070b' }}
       >
         Überflug

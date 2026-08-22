@@ -1,15 +1,11 @@
 import { useState } from 'react'
 import { useFlightStore } from '../store/flightStore'
 import { ImportValidationError, parseFlightImport } from '../store/exportImport'
-import { Accordion } from './components/Accordion'
 import { ImportButton } from './components/ImportButton'
 import { ThemeToggleButton } from './components/ThemeToggleButton'
-import { AircraftManager } from './planning/AircraftManager'
 import { createDemoFlight } from './seed/createDemoFlight'
 
-/** Flugliste + Einstieg in einen neuen Flug. Flugzeugmuster sind hier
- * ebenfalls erreichbar, weil sie unabhängig vom einzelnen Flug gespeichert
- * sind — man kann ein Muster anlegen, bevor der erste Flug existiert. */
+/** Flugliste + Einstieg in einen neuen Flug. */
 export function NoFlightScreen() {
   const flights = useFlightStore((s) => s.flights)
   const open = useFlightStore((s) => s.open)
@@ -27,7 +23,6 @@ export function NoFlightScreen() {
       etdUtcMin: 0,
       transitionAltitudeFt: 5000,
       transitionLevel: '',
-      aircraftId: '',
       globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 0 },
     })
   }
@@ -108,12 +103,6 @@ export function NoFlightScreen() {
             ⚠ {importError}
           </p>
         )}
-      </div>
-
-      <div className="rounded border" style={{ borderColor: 'var(--border)' }}>
-        <Accordion title="Flugzeugmuster verwalten">
-          <AircraftManager />
-        </Accordion>
       </div>
     </div>
   )
