@@ -1,15 +1,30 @@
+import { useEffect } from 'react'
+import { ThemeProvider } from './ui/theme/ThemeContext'
+import { useAircraftStore } from './store/aircraftStore'
+import { useFlightStore } from './store/flightStore'
+import { NoFlightScreen } from './ui/NoFlightScreen'
+import { FlightExecutionScreen } from './ui/flight-execution/FlightExecutionScreen'
+
+function AppShell() {
+  const loadAircraft = useAircraftStore((s) => s.loadAll)
+  const loadFlights = useFlightStore((s) => s.loadAll)
+  const isLoaded = useFlightStore((s) => s.isLoaded)
+  const currentFlight = useFlightStore((s) => s.currentFlight)
+
+  useEffect(() => {
+    void loadAircraft()
+    void loadFlights()
+  }, [loadAircraft, loadFlights])
+
+  if (!isLoaded) return null
+  return currentFlight ? <FlightExecutionScreen /> : <NoFlightScreen />
+}
+
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-8">
-      <div className="max-w-xl text-center">
-        <h1 className="text-2xl font-semibold text-slate-100">VFRMate</h1>
-        <p className="mt-3 text-slate-400">
-          Projektgerüst steht. Die Bildschirme (Flugdurchführung, Planung,
-          Masse &amp; Schwerpunkt, Start-/Landestrecke, Kraftstoff) folgen in
-          den nächsten Phasen.
-        </p>
-      </div>
-    </div>
+    <ThemeProvider>
+      <AppShell />
+    </ThemeProvider>
   )
 }
 

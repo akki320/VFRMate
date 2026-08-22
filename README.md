@@ -8,8 +8,8 @@ Anmeldung, keine Cloud: alle Daten bleiben lokal auf dem Gerät.
 
 - React + TypeScript + Vite
 - Tailwind CSS v4 (`@tailwindcss/vite`)
-- Zustand (State) — folgt in einer späteren Phase
-- IndexedDB via `idb` (Persistenz) — folgt in einer späteren Phase
+- Zustand (State)
+- IndexedDB via `idb` (Persistenz)
 - `vite-plugin-pwa` (Service Worker, App-Shell-Precaching, Web-App-Manifest)
 - Vitest (Unit-Tests der Domain-Schicht)
 
@@ -19,7 +19,7 @@ Anmeldung, keine Cloud: alle Daten bleiben lokal auf dem Gerät.
 src/
   domain/   reine Berechnungslogik, framework-frei (keine React-Imports)
   store/    Zustand-Stores + IndexedDB-Persistenz (via idb)
-  ui/       React-Komponenten/Screens (folgt)
+  ui/       React-Komponenten/Screens
 ```
 
 Die Domain-Schicht (`src/domain/`) ist bewusst von React entkoppelt und
@@ -56,6 +56,46 @@ vollständig unit-getestet:
 - Getestet mit `fake-indexeddb` unter Vitest (Node-Umgebung), inklusive
   Crash-/Reload-Sicherheit von ATO-Einträgen.
 
+### Bildschirm 1: Flugdurchführung (`src/ui/flight-execution/`)
+
+Die Kernansicht, die im Flug offen ist — eine Zeile pro Kontrollpunkt mit
+genau den Spalten, die im Flug gebraucht werden: Kontrollpunkt,
+Sicherh.-Höhe, MH, Zeit (Abschnitt/Rest), ETO, ATO.
+
+- `useFlightExecutionViewModel.ts` — verknüpft den aktuellen Flug mit
+  `computeFlightLegs`/`reEstimateLegs`/`checkFuelPlan` und leitet die
+  aktive Zeile, die Re-Estimate-Deltas und die Warnschwellen ab. Nichts
+  davon wird gespeichert.
+- `LegTable.tsx`/`LegRow.tsx` — die aktive Zeile (nächster
+  anzufliegender Kontrollpunkt) ist hervorgehoben und bleibt beim Scrollen
+  zusammen mit der Kopfzeile oben fixiert (`position: sticky`). Tap auf den
+  Kontrollpunktnamen klappt die Detailwerte auf (TC, WCA, MC, rwK, Wind,
+  VAR, TAS, GS, Distanz Abschnitt/gesamt, Flughöhe, Bemerkungen).
+- `AtoCell.tsx` — ein Tap auf "Überflug" trägt die aktuelle UTC-Zeit als
+  ATO ein und schaltet zur nächsten Zeile weiter; ein bereits erfasstes
+  ATO lässt sich per Long-Press manuell korrigieren.
+- `RemainingHud.tsx` — Restzeit, Restdistanz und die laufende UTC-Uhr,
+  fest am unteren Bildschirmrand, unabhängig vom Scrollstand.
+- `panels/` — die restlichen Formularabschnitte (Frequenzen,
+  Wetter/Freigaben, Kraftstoff, Masse & Schwerpunkt, Start-/Landestrecke,
+  AIP-Notizen) stecken hinter zugeklappten Accordions unterhalb der
+  Tabelle, damit sie im Flug nicht mit der Kerntabelle konkurrieren.
+- Warnhinweise (rot, nur als Signal) erscheinen, wenn die geschätzte
+  Restflugzeit die sichere Flugzeit überschreitet oder die geschätzte
+  Ankunft nach Sonnenuntergang liegt.
+
+Gestaltung: Nachtmodus (dunkel) ist Standard, ein Tagmodus mit sehr hohem
+Kontrast lässt sich umschalten (`ui/theme/`). Alle Zahlenwerte stehen in
+einer tabellarischen Monospace-Schrift. Im Flug bediente Elemente (Tabelle,
+Überflug-Button) haben mindestens 56 px Touchziel; Formularfelder in den
+Accordions sind bewusst klein und zurückhaltend, weil sie nur am Boden
+gebraucht werden.
+
+`NoFlightScreen.tsx` ist ein Platzhalter, solange es noch kein
+Bildschirm 2 gibt: Liste gespeicherter Flüge zum Öffnen plus ein
+Beispielflug-Generator zum Ausprobieren von Bildschirm 1. Wird in der
+nächsten Phase durch die echte Planungsansicht ersetzt.
+
 ## Entwicklung
 
 ```bash
@@ -73,7 +113,10 @@ npx vitest run    # Unit-Tests
 - **Phase 2 (abgeschlossen):** Zustand-Stores + IndexedDB-Persistenz
   (Aircraft- und Flight-CRUD, sofortiges Autosave, Re-Estimate-taugliches
   Leg-Override-Modell mit globalen Flugstandardwerten).
+- **Phase 3 (abgeschlossen):** Bildschirm 1 (Flugdurchführung) inklusive
+  ATO-Erfassung, Re-Estimate-Anzeige, Warnhinweisen, Nacht-/Tagmodus und
+  den Accordion-Formularabschnitten.
 
-Die UI-Bildschirme (Flugdurchführung, Streckenplanung, Masse & Schwerpunkt,
-Start-/Landestrecke, Kraftstoff, Frequenzen/Wetter) sowie PWA-Feinschliff,
-Export/Import und Druckansicht folgen in den nächsten Phasen.
+Bildschirm 2 (Planung mit Leg-Verwaltung, Muster-Verwaltung,
+Großkreisrechnung aus Koordinaten) sowie PWA-Feinschliff, Export/Import
+und Druckansicht folgen in den nächsten Phasen.

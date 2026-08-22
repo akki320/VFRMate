@@ -1,7 +1,68 @@
 @import 'tailwindcss';
 
+/*
+ * Designgrundlage: ein Instrument, kein Dashboard.
+ *
+ * - Nacht (Standard): dunkler Grundton für Dämmerung/Cockpit.
+ * - Tag (data-theme="day"): sehr hoher Kontrast für direktes Sonnenlicht.
+ * - Farbe ausschließlich als Signal: aktive Zeile, Grenzwertverletzung,
+ *   Zeitabweichung. Keine dekorativen Akzente.
+ * - Alle Zahlenwerte in einer tabellarischen Monospace-Schrift.
+ */
+
 :root {
   color-scheme: dark;
+
+  --font-mono:
+    ui-monospace, 'SF Mono', 'Cascadia Mono', 'JetBrains Mono', Consolas, 'Roboto Mono',
+    monospace;
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --bg: #05070b;
+  --bg-elevated: #10151f;
+  --bg-elevated-2: #171e2c;
+  --border: #263042;
+  --border-strong: #3a4863;
+
+  --text-primary: #e8edf5;
+  --text-secondary: #93a1b8;
+  --text-muted: #5d6a82;
+
+  /* Signalfarben — nie dekorativ, immer eine konkrete Bedeutung. */
+  --signal-active-bg: #1c3357;
+  --signal-active-border: #4a7fc9;
+  --signal-warning-bg: #3a1414;
+  --signal-warning-border: #d13a3a;
+  --signal-warning-text: #ff9a9a;
+  --signal-delta-late: #ff9a5c;
+  --signal-delta-early: #7fd08a;
+
+  --focus-ring: #f5b942;
+}
+
+:root[data-theme='day'] {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --bg-elevated: #f3f4f6;
+  --bg-elevated-2: #e9ebef;
+  --border: #c7ccd6;
+  --border-strong: #8b93a3;
+
+  --text-primary: #0b0e14;
+  --text-secondary: #333a4a;
+  --text-muted: #5b6472;
+
+  --signal-active-bg: #cfe0fb;
+  --signal-active-border: #2f5fa8;
+  --signal-warning-bg: #ffe0e0;
+  --signal-warning-border: #b30000;
+  --signal-warning-text: #7a0000;
+  --signal-delta-late: #a3450b;
+  --signal-delta-early: #1c6b2c;
+
+  --focus-ring: #a35c00;
 }
 
 html,
@@ -12,12 +73,35 @@ body,
 
 body {
   margin: 0;
-  background-color: #0f172a;
-  color: #e2e8f0;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/* Numerische Werte (Kurse, Zeiten, Massen, ...) immer tabellarisch. */
+.mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Sichtbarer Fokus, überall — Tastaturbedienbarkeit ist Pflicht. */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .transition-state {
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

@@ -9,6 +9,7 @@
  * Mitternacht (0–1439), never as a `Date`. Displaying it as `HH:MM` is a
  * UI-layer concern (see src/domain/format.ts).
  */
+import type { RunwayConditions } from './runway'
 
 /** Minutes since UTC midnight, 0–1439. Wrap-around past midnight is the
  * caller's responsibility (a flight never spans > 24h in this app). */
@@ -274,6 +275,29 @@ export interface Flight {
   globalDefaults: FlightGlobalDefaults
   legs: Leg[]
   legActuals: LegActual[]
+
+  /**
+   * Restliche Formularabschnitte des Flugdurchführungsplans. In
+   * Bildschirm 1 stecken sie hinter zugeklappten Accordion-Panels, in
+   * Bildschirm 2 als eigene Formularabschnitte — beides bearbeitet
+   * dieselben Felder. Alles optional: ein Flug kann angelegt werden,
+   * bevor diese Angaben vorliegen.
+   */
+  fuelPlan?: FuelPlan
+  massBalanceLoad?: MassBalance
+  frequencies?: Frequencies
+  weather?: {
+    departure?: WeatherInfo
+    destination?: WeatherInfo
+    alternate?: WeatherInfo
+  }
+  runwayConditions?: {
+    departure?: RunwayConditions
+    destination?: RunwayConditions
+  }
+  /** Freiform-Notizen zu Flugplatzdaten aus dem AIP (Pistenlänge,
+   * Platzrunde, Besonderheiten, ...) — kein strukturiertes AIP-Modell. */
+  aerodromeNotes?: string
 }
 
 /** Kraftstoffplan nach deutschem Flugdurchführungsplan-Schema. Alle Mengen
