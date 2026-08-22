@@ -7,14 +7,18 @@ import { ThemeToggleButton } from '../components/ThemeToggleButton'
 import { useFlightExecutionViewModel } from './useFlightExecutionViewModel'
 import { LegTable } from './LegTable'
 import { RemainingHud } from './RemainingHud'
-import { FrequenciesPanel } from './panels/FrequenciesPanel'
-import { WeatherPanel } from './panels/WeatherPanel'
-import { FuelPanel } from './panels/FuelPanel'
-import { MassBalancePanel } from './panels/MassBalancePanel'
-import { RunwayPanel } from './panels/RunwayPanel'
-import { AerodromeNotesPanel } from './panels/AerodromeNotesPanel'
+import { FrequenciesPanel } from '../panels/FrequenciesPanel'
+import { WeatherPanel } from '../panels/WeatherPanel'
+import { FuelPanel } from '../panels/FuelPanel'
+import { MassBalancePanel } from '../panels/MassBalancePanel'
+import { RunwayPanel } from '../panels/RunwayPanel'
+import { AerodromeNotesPanel } from '../panels/AerodromeNotesPanel'
 
-export function FlightExecutionScreen() {
+interface FlightExecutionScreenProps {
+  onOpenPlanning: () => void
+}
+
+export function FlightExecutionScreen({ onOpenPlanning }: FlightExecutionScreenProps) {
   const viewModel = useFlightExecutionViewModel()
   const closeCurrent = useFlightStore((s) => s.closeCurrent)
   const aircraft = useAircraftStore((s) =>
@@ -53,6 +57,14 @@ export function FlightExecutionScreen() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggleButton />
+          <button
+            type="button"
+            onClick={onOpenPlanning}
+            className="rounded border px-3 py-1.5 text-xs"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            Planung
+          </button>
           <button
             type="button"
             onClick={closeCurrent}

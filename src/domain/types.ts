@@ -10,6 +10,7 @@
  * UI-layer concern (see src/domain/format.ts).
  */
 import type { RunwayConditions } from './runway'
+import type { Coordinates } from './greatCircle'
 
 /** Minutes since UTC midnight, 0–1439. Wrap-around past midnight is the
  * caller's responsibility (a flight never spans > 24h in this app). */
@@ -155,7 +156,7 @@ export interface Leg {
   /** Kontrollpunkt-Name (Ziel dieses Abschnitts), z.B. "EDXY" oder "Kirchturm Musterdorf". */
   waypoint: string
   /** Optionale Koordinaten (Dezimalgrad). */
-  coordinates?: { lat: number; lon: number }
+  coordinates?: Coordinates
   /** Sicherheitshöhe in ft. */
   safetyAltitudeFt?: number
   /** Geplante Flughöhe in ft oder Flugfläche (z.B. "FL065"). */
@@ -259,6 +260,11 @@ export interface Flight {
   departureAerodrome: string
   destinationAerodrome: string
   alternateAerodrome?: string
+  /** Koordinaten des Startflugplatzes — Basispunkt für die
+   * Großkreisrechnung des ersten Legs (siehe greatCircle.ts). Optional:
+   * ohne sie lässt sich nur das erste Leg nicht aus Koordinaten ableiten,
+   * TC/Distanz können weiterhin manuell eingegeben werden. */
+  departureCoordinates?: Coordinates
   /** Estimated Time of Departure, UTC-Minuten seit Mitternacht. */
   etdUtcMin: UtcMinutes
   /** Actual Time of Departure, UTC-Minuten seit Mitternacht (optional bis Start). */

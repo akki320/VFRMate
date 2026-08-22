@@ -1,7 +1,7 @@
-import type { Aircraft, Flight, FuelPlan } from '../../../domain/types'
-import { checkFuelPlan } from '../../../domain/fuel'
-import { useFlightStore } from '../../../store/flightStore'
-import { NumberField } from '../../components/FormField'
+import type { Aircraft, Flight, FuelPlan } from '../../domain/types'
+import { checkFuelPlan } from '../../domain/fuel'
+import { useFlightStore } from '../../store/flightStore'
+import { NumberField } from '../components/FormField'
 
 const EMPTY_FUEL_PLAN: FuelPlan = {
   startAndTaxiL: 0,

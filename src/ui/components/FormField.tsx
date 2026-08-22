@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { ChangeEvent } from 'react'
+import { formatUtcMinutes, parseUtcMinutes } from '../../domain/format'
 
 /**
  * Kompakte, zurückhaltende Formularfelder für alles, was nur am Boden
@@ -121,6 +123,55 @@ export function TextAreaField({ id, label, value, onChange, rows = 4 }: TextArea
         rows={rows}
         onChange={(e) => onChange(e.target.value)}
         className={`${fieldClass} font-sans`}
+        style={fieldStyle}
+      />
+    </FieldWrapper>
+  )
+}
+
+interface TimeFieldProps {
+  id: string
+  label: string
+  /** UTC-Minuten seit Mitternacht, oder undefined für "nicht gesetzt". */
+  value: number | undefined
+  onChange: (value: number | undefined) => void
+}
+
+/** Zeitfeld als "HH:MM"-Text, gebunden an UTC-Minuten seit Mitternacht
+ * (siehe domain/format.ts) — kein <input type="time">, damit die
+ * UTC-Konvention nie mit der Zeitzone des Geräts verwechselt wird. */
+export function TimeField({ id, label, value, onChange }: TimeFieldProps) {
+  const formatted = value !== undefined ? formatUtcMinutes(value) : ''
+  const [draft, setDraft] = useState(formatted)
+  // Wenn sich der Wert von außen ändert (z.B. ein anderer Store-Patch),
+  // den Entwurf synchron beim Rendern nachziehen statt in einem Effect —
+  // vermeidet einen unnötigen zusätzlichen Render-Durchlauf.
+  const [lastFormatted, setLastFormatted] = useState(formatted)
+  if (formatted !== lastFormatted) {
+    setLastFormatted(formatted)
+    setDraft(formatted)
+  }
+
+  const commit = (raw: string) => {
+    if (raw.trim() === '') {
+      onChange(undefined)
+      return
+    }
+    const parsed = parseUtcMinutes(raw)
+    if (!Number.isNaN(parsed)) onChange(parsed)
+  }
+
+  return (
+    <FieldWrapper label={`${label} (UTC)`} htmlFor={id}>
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        placeholder="HH:MM"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => commit(draft)}
+        className={fieldClass}
         style={fieldStyle}
       />
     </FieldWrapper>

@@ -1,6 +1,6 @@
-import type { Flight } from '../../../domain/types'
-import { useFlightStore } from '../../../store/flightStore'
-import { TextAreaField } from '../../components/FormField'
+import type { Flight } from '../../domain/types'
+import { useFlightStore } from '../../store/flightStore'
+import { TextAreaField } from '../components/FormField'
 
 /** Freiform-Notizen zu Flugplatzdaten aus dem AIP (Pistenlänge,
  * Platzrunde, Besonderheiten, Beschränkungen, ...). */

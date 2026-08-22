@@ -1,7 +1,7 @@
-import type { Flight, WeatherInfo } from '../../../domain/types'
-import { useFlightStore } from '../../../store/flightStore'
-import { formatUtcMinutes, parseUtcMinutes } from '../../../domain/format'
-import { NumberField, TextField } from '../../components/FormField'
+import type { Flight, WeatherInfo } from '../../domain/types'
+import { useFlightStore } from '../../store/flightStore'
+import { formatUtcMinutes, parseUtcMinutes } from '../../domain/format'
+import { NumberField, TextField } from '../components/FormField'
 
 type WeatherSide = 'departure' | 'destination' | 'alternate'
 

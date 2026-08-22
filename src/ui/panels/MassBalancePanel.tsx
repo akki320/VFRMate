@@ -1,7 +1,7 @@
-import type { Aircraft, Flight, MassBalance } from '../../../domain/types'
-import { computeMassBalance } from '../../../domain/massBalance'
-import { useFlightStore } from '../../../store/flightStore'
-import { NumberField } from '../../components/FormField'
+import type { Aircraft, Flight, MassBalance } from '../../domain/types'
+import { computeMassBalance } from '../../domain/massBalance'
+import { useFlightStore } from '../../store/flightStore'
+import { NumberField } from '../components/FormField'
 
 const EMPTY_LOAD: MassBalance = {
   emptyMassKg: 0,

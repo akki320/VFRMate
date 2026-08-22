@@ -1,7 +1,7 @@
-import type { Aircraft, Flight } from '../../../domain/types'
-import { computeRunwayCalc, type RunwayConditions } from '../../../domain/runway'
-import { useFlightStore } from '../../../store/flightStore'
-import { CheckboxField, NumberField } from '../../components/FormField'
+import type { Aircraft, Flight } from '../../domain/types'
+import { computeRunwayCalc, type RunwayConditions } from '../../domain/runway'
+import { useFlightStore } from '../../store/flightStore'
+import { CheckboxField, NumberField } from '../components/FormField'
 
 type RunwaySide = 'departure' | 'destination'
 

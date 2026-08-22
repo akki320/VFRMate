@@ -1,6 +1,6 @@
-import type { Flight } from '../../../domain/types'
-import { useFlightStore } from '../../../store/flightStore'
-import { TextField } from '../../components/FormField'
+import type { Flight } from '../../domain/types'
+import { useFlightStore } from '../../store/flightStore'
+import { TextField } from '../components/FormField'
 
 /** TWR/Ground/INFO/ATIS je Start- und Zielflugplatz. */
 export function FrequenciesPanel({ flight }: { flight: Flight }) {
