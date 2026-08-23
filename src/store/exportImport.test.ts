@@ -53,8 +53,13 @@ function makeFlight(overrides: Partial<Flight> = {}): Flight {
     destinationAerodrome: 'EDXB',
     etdUtcMin: 480,
     transitionAltitudeFt: 5000,
-    transitionLevel: 'FL065',
-    aircraftId: 'ac-1',
+    // Leer, wie bei jedem in der aktuellen UI neu angelegten Flug — das
+    // Feld ist seit Phase 9 gar nicht mehr editierbar (siehe
+    // FlightHeader.tsx). Kein aircraftId: das Feld ist optional und wird
+    // von der aktuellen UI nicht mehr geschrieben (siehe
+    // domain/types.ts::Flight). Beides bewusst so gewählt, damit dieser
+    // Helfer echte Exporte aus der App abbildet statt eines Idealfalls.
+    transitionLevel: '',
     globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 0 },
     legs: [],
     legActuals: [],
@@ -110,5 +115,48 @@ describe('serializeFlight / parseFlightImport', () => {
 
   it('rejects an object missing required fields', () => {
     expect(() => parseFlightImport(JSON.stringify({ name: 'X' }))).toThrow(/departureAerodrome/)
+  })
+
+  // Regression: ein Nutzer-Export scheiterte am Re-Import mit "transitionLevel
+  // fehlt oder ist kein Text; aircraftId fehlt oder ist kein Text" — obwohl
+  // beides beim Export einer ganz normal in der App angelegten Datei
+  // entstand. Ursache: requireString verbot fälschlich Leerstrings (jeder
+  // neue Flug hat transitionLevel: "", da das Feld seit Phase 9 nicht mehr
+  // editierbar ist), und aircraftId wurde als Pflichtfeld verlangt, obwohl
+  // es im Domain-Typ optional ist und die aktuelle UI es nie schreibt.
+  it('accepts an empty transitionLevel (not editable in the current UI)', () => {
+    const flight = makeFlight({ transitionLevel: '' })
+    expect(() => parseFlightImport(serializeFlight(flight))).not.toThrow()
+  })
+
+  it('accepts a flight without aircraftId (optional, unused by the current UI)', () => {
+    const flight = makeFlight()
+    expect(flight).not.toHaveProperty('aircraftId')
+    expect(() => parseFlightImport(serializeFlight(flight))).not.toThrow()
+  })
+
+  it('imports a real exported flight with an empty transitionLevel and no aircraftId', () => {
+    const exported = {
+      kind: 'vfrmate-flight',
+      version: 1,
+      data: {
+        name: 'EDKL->EDXJ',
+        date: '2026-08-23',
+        departureAerodrome: 'EDKL',
+        destinationAerodrome: 'EDXJ',
+        etdUtcMin: 900,
+        transitionAltitudeFt: 5000,
+        transitionLevel: '',
+        globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 0 },
+        id: '1ce078ed-05a6-4699-9664-edefad7a7182',
+        legs: [{ id: 'leg-1', waypoint: 'EDKL', plannedAltitude: 'Start', tc: 1, distanceNm: 1.6 }],
+        legActuals: [],
+        aircraftType: 'DR40',
+        aircraftRegistration: 'D-EFMD',
+      },
+    }
+    const imported = parseFlightImport(JSON.stringify(exported))
+    expect(imported.name).toBe('EDKL->EDXJ')
+    expect(imported.aircraftType).toBe('DR40')
   })
 })

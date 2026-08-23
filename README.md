@@ -297,6 +297,27 @@ npx vitest run    # Unit-Tests
   Touch-Zielgrößen (Überflug-Taster, ATO-Korrektur) blieben unverändert
   auf ihrer Mindesthöhe/-breite, da das eine Bedienbarkeits- keine
   Platzfrage ist.
+- **Phase 15 (abgeschlossen):** Bugfix Flug-Import. Ein vom Nutzer
+  exportierter, ganz normal in der App angelegter Flug ließ sich nicht
+  wieder importieren ("transitionLevel fehlt oder ist kein Text;
+  aircraftId fehlt oder ist kein Text") — zwei Fehler in
+  exportImport.ts::requireString/parseFlightImport:
+  1. `requireString` verbot fälschlich Leerstrings, obwohl ein leerer
+     String den TypeScript-Typ `string` genauso erfüllt wie jeder
+     andere. `transitionLevel` ist seit Phase 9 in der UI gar nicht
+     mehr editierbar, also bei jedem neu angelegten Flug `""` statt
+     eines echten Werts — betraf damit praktisch jeden Export.
+  2. `aircraftId` wurde als Pflichtfeld verlangt, obwohl es im
+     Domain-Typ optional ist (`aircraftId?: string`) und die aktuelle
+     UI seit Phase 6 stattdessen aircraftType/aircraftRegistration als
+     Freitext schreibt, aircraftId also nie gesetzt.
+  `requireString` prüft jetzt nur noch, ob das Feld ein String ist
+  (kein Leerstring-Verbot mehr), `aircraftId` ist keine Pflichtangabe
+  mehr. 3 neue Regressionstests, einer davon mit der exakten vom
+  Nutzer gemeldeten Datei; alle 105 Tests grün. Der Import wurde
+  zusätzlich end-to-end mit der Originaldatei des Nutzers per
+  Playwright verifiziert — Flug mit 14 Legs, LFZ-Muster/-Kennzeichen
+  und den beiden erfassten ATOs öffnet und rechnet jetzt korrekt.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

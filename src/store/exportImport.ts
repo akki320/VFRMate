@@ -62,8 +62,16 @@ function unwrap(parsed: Json, expectedKind: string): Json {
   return parsed
 }
 
+/** Prüft nur, ob das Feld überhaupt ein String ist — bewusst kein
+ * Leerstring-Verbot. Etliche String-Felder sind laut Domain-Typ zwar
+ * Pflichtfelder (kein `?`), aber inhaltlich zulässigerweise leer, z.B.
+ * Flight.transitionLevel (in der UI seit Phase 9 gar nicht mehr
+ * editierbar, bei jedem neu angelegten Flug also "" statt eines echten
+ * Werts). Ein Leerstring erfüllt den TypeScript-Typ `string` genauso wie
+ * jeder andere — die Validierung sollte nicht strenger sein als der Typ,
+ * den sie prüft. */
 function requireString(data: Json, field: string, errors: string[]): void {
-  if (typeof data[field] !== 'string' || data[field] === '') errors.push(`${field} fehlt oder ist kein Text`)
+  if (typeof data[field] !== 'string') errors.push(`${field} fehlt oder ist kein Text`)
 }
 
 function requireNumber(data: Json, field: string, errors: string[]): void {
@@ -121,7 +129,10 @@ export function parseFlightImport(json: string): Omit<Flight, 'id'> {
   requireNumber(data, 'etdUtcMin', errors)
   requireNumber(data, 'transitionAltitudeFt', errors)
   requireString(data, 'transitionLevel', errors)
-  requireString(data, 'aircraftId', errors)
+  // aircraftId ist optional (siehe domain/types.ts::Flight) — die aktuelle
+  // UI schreibt stattdessen aircraftType/aircraftRegistration als
+  // Freitext; ein Export ohne aircraftId ist also der Normalfall, kein
+  // Fehler.
   requireRecord(data, 'globalDefaults', errors)
   requireArray(data, 'legs', errors)
   requireArray(data, 'legActuals', errors)
