@@ -251,7 +251,7 @@ export function LegTableRow({
       case 'distRemain':
         return <ReadOnly>{derived.remainingDistanceNm}</ReadOnly>
       case 'gs':
-        return <NumberCell label="GS" value={leg.gs} onChange={(v) => void updateLeg(leg.id, { gs: v })} />
+        return <ReadOnly>{derived.gs}</ReadOnly>
       case 'timeLeg':
         return <NumberCell label="Zeit Abschnitt" value={leg.timeMin} onChange={(v) => void updateLeg(leg.id, { timeMin: v })} />
       case 'timeRemain':

@@ -246,6 +246,13 @@ npx vitest run    # Unit-Tests
   Felder. Beide neuen Spalten in domain/flightPlan.ts::LegDerived, in der
   Kopfzeile mit "⚙" markiert; `Leg.wca`/`Leg.distanceRemainNm` als
   Piloten-Eingabefelder entfernt, da nun immer abgeleitet.
+- **Phase 11 (abgeschlossen):** Auch GS jetzt automatisch berechnet:
+  GS = TAS·cos(WCA) − Windgeschwindigkeit·cos(Windwinkel), aus derselben
+  Winddreieck-Funktion wie WCA (navigation.ts::windTriangle liefert
+  beide zusammen). MH und Zeit Abschnitt bleiben die einzigen noch
+  manuellen Navigations-/Zeitfelder. `Leg.gs` als Piloten-Eingabefeld
+  entfernt, da nun immer abgeleitet; neues `LegDerived.gs`, in der
+  Kopfzeile mit "⚙" markiert.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

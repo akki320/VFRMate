@@ -91,6 +91,21 @@ describe('computeLegDerived', () => {
     const derived = computeLegDerived(flight)
     expect(derived[0].wca).toBe(0)
   })
+
+  it('computes GS from TAS, WCA and wind via the wind triangle', () => {
+    // Headwind: GS should be reduced below TAS.
+    const flight = makeFlight([makeLeg({ tc: 0, wind: { directionDeg: 0, speedKt: 20 } })], {
+      globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 0 },
+    })
+    const derived = computeLegDerived(flight)
+    expect(derived[0].gs).toBe(80) // 100 - 20, direct headwind, WCA 0
+  })
+
+  it('equals TAS with no wind', () => {
+    const flight = makeFlight([makeLeg({ tc: 45 })])
+    const derived = computeLegDerived(flight)
+    expect(derived[0].gs).toBe(100) // global TAS
+  })
 })
 
 describe('reEstimateEto', () => {

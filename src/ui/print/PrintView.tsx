@@ -78,7 +78,7 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
               'MC ⚙',
               'Entf.Abschn.',
               'Entf.Rest ⚙',
-              'GS',
+              'GS ⚙',
               'Zeit Abschn.',
               'Zeit Rest ⚙',
               'ETO ⚙',
@@ -116,7 +116,7 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
                 <td style={printTdStyle}>{String(legDerived.mc).padStart(3, '0')}°</td>
                 <td style={printTdStyle}>{leg.distanceNm}</td>
                 <td style={printTdStyle}>{legDerived.remainingDistanceNm}</td>
-                <td style={printTdStyle}>{leg.gs ?? '–'}</td>
+                <td style={printTdStyle}>{legDerived.gs}</td>
                 <td style={printTdStyle}>{leg.timeMin ?? '–'}</td>
                 <td style={printTdStyle}>{formatHoursMinutes(legDerived.remainingTimeMin)}</td>
                 <td style={printTdStyle}>

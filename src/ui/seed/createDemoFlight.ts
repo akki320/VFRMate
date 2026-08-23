@@ -26,9 +26,9 @@ function demoFlightInput(): Omit<Flight, 'id' | 'legs' | 'legActuals'> {
 export async function createDemoFlight(): Promise<void> {
   await useFlightStore.getState().createNew(demoFlightInput())
 
-  // mh/gs/timeMin sind Piloteneingaben — hier mit plausiblen, von Hand
+  // mh/timeMin sind Piloteneingaben — hier mit plausiblen, von Hand
   // "vorgerechneten" Werten befüllt, damit der Beispielflug direkt
-  // vollständig aussieht. wca und distanceRemainNm werden automatisch
+  // vollständig aussieht. wca, gs und distanceRemainNm werden automatisch
   // berechnet (siehe domain/flightPlan.ts), hier also nicht gesetzt.
   const legs: Array<Omit<Flight['legs'][number], 'id'>> = [
     {
@@ -38,7 +38,6 @@ export async function createDemoFlight(): Promise<void> {
       tc: 45,
       mh: 40,
       distanceNm: 12,
-      gs: 111,
       timeMin: 6,
     },
     {
@@ -48,7 +47,6 @@ export async function createDemoFlight(): Promise<void> {
       tc: 80,
       mh: 79,
       distanceNm: 18,
-      gs: 112,
       timeMin: 10,
     },
     {
@@ -58,7 +56,6 @@ export async function createDemoFlight(): Promise<void> {
       tc: 100,
       mh: 102,
       distanceNm: 22,
-      gs: 117,
       timeMin: 11,
       wind: { directionDeg: 260, speedKt: 18 },
     },
@@ -69,7 +66,6 @@ export async function createDemoFlight(): Promise<void> {
       tc: 130,
       mh: 134,
       distanceNm: 9,
-      gs: 105,
       timeMin: 5,
     },
   ]
