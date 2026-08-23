@@ -1,44 +1,41 @@
-import { clockMinuteOnly, formatDeltaMinutes, formatHoursMinutes, formatUtcMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
 import type { ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
-import { AtoCell } from './AtoCell'
-import { inputClass, NumberCell, TextCell } from './cells'
+import { ACTIVE_LIGHT_STYLE, inputClass, NumberCell, ReadOnly, TextCell } from './cells'
+import { formatHoursMinutes } from '../../domain/format'
 
 interface LegTableRowProps {
   row: FlightTableRow
   visibleColumns: ColumnId[]
-  headerOffsetPx: number
-  anchorUtcMinutes: number
   remarksCollapsed: boolean
 }
 
 /**
- * Die "Streckendaten-Zeile" eines Legs — Sicherh.-Höhe bis ATO plus
+ * Die "Streckendaten-Zeile" eines Legs — Sicherh.-Höhe bis Zeit Rest plus
  * Bemerkungen. Sitzt im gerenderten Markup zwischen zwei
  * Kontrollpunkt-Zeilen (siehe CheckpointRow.tsx): der Kontrollpunkt VOR
  * dieser Zeile und der, den dieses Leg ansteuert, direkt DANACH — so wie im
  * Papierformular, wo die Streckendaten optisch zwischen den beiden
  * Kontrollpunktfeldern liegen, auf die sie sich beziehen. Kontrollpunktname
- * und die Verschieben-/Löschen-Knöpfe eines Legs gehören seit dieser
- * Aufteilung zur CheckpointRow, nicht mehr hierher — die ersten beiden
- * Spalten bleiben hier deshalb bewusst leer (bis auf einen kleinen
- * Verbindungspfeil), damit die Spaltenbreiten trotzdem mit den
- * Kontrollpunkt-Zeilen übereinstimmen.
+ * und die Verschieben-/Löschen-Knöpfe eines Legs gehören seit Phase 17 zur
+ * CheckpointRow, ETO und ATO seit Phase 18 ebenfalls (auf ausdrücklichen
+ * Wunsch: sie gehören zum Kontrollpunkt, den sie beschreiben, nicht zur
+ * Strecke davor) — die Spalten Kontrollpunkt, ETO, ATO und die gespiegelte
+ * Kontrollpunkt-Spalte bleiben hier deshalb bewusst leer (Kontrollpunkt
+ * bis auf einen kleinen Verbindungspfeil), damit die Spaltenbreiten
+ * trotzdem mit den Kontrollpunkt-Zeilen übereinstimmen.
+ *
+ * Nicht mehr sticky (das war früher diese Zeile, weil sie den
+ * "Überflug"-Taster trug — der sitzt jetzt auf der Kontrollpunkt-Zeile,
+ * siehe dort). Bleibt aber, solange sie zum aktiven Leg gehört, leicht
+ * hervorgehoben (ACTIVE_LIGHT_STYLE) für denselben "von … nach …"-Kontext
+ * wie die angrenzenden Kontrollpunkt-Zeilen.
  */
-export function LegTableRow({ row, visibleColumns, headerOffsetPx, anchorUtcMinutes, remarksCollapsed }: LegTableRowProps) {
+export function LegTableRow({ row, visibleColumns, remarksCollapsed }: LegTableRowProps) {
   const updateLeg = useFlightStore((s) => s.updateLeg)
-  const { leg, resolved, derived, eto } = row
+  const { leg, resolved, derived } = row
 
-  const rowStyle: React.CSSProperties = row.isActive
-    ? {
-        position: 'sticky',
-        top: headerOffsetPx,
-        zIndex: 5,
-        backgroundColor: 'var(--signal-active-bg)',
-        boxShadow: 'inset 4px 0 0 var(--signal-active-border)',
-      }
-    : { backgroundColor: 'transparent' }
+  const rowStyle = row.isActive ? ACTIVE_LIGHT_STYLE : { backgroundColor: 'transparent' }
 
   return (
     <tr className="transition-state border-b" style={{ ...rowStyle, borderColor: 'var(--border)' }}>
@@ -54,9 +51,13 @@ export function LegTableRow({ row, visibleColumns, headerOffsetPx, anchorUtcMinu
         </td>
       ))}
 
-      <td className="px-1 py-1 align-middle text-right sm:px-1.5 sm:py-1.5">
-        <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} anchorUtcMinutes={anchorUtcMinutes} />
-      </td>
+      {/* ATO: jetzt auf der Kontrollpunkt-Zeile (siehe CheckpointRow.tsx) —
+          leere Zelle hier nur, damit die Spaltenbreite erhalten bleibt. */}
+      <td className="px-1 py-1 align-middle text-right sm:px-1.5 sm:py-1.5" />
+
+      {/* Gespiegelte Kontrollpunkt-Spalte: nur auf der Kontrollpunkt-Zeile
+          sinnvoll, hier ebenfalls leer. */}
+      <td className="px-1 py-1 align-middle sm:px-1.5 sm:py-1.5" />
 
       <td className="px-1 py-1 align-middle sm:px-1.5 sm:py-1.5">
         <TextCell
@@ -142,19 +143,10 @@ export function LegTableRow({ row, visibleColumns, headerOffsetPx, anchorUtcMinu
       case 'timeRemain':
         return <ReadOnly>{formatHoursMinutes(derived.remainingTimeMin)}</ReadOnly>
       case 'eto':
-        return (
-          <ReadOnly title={`ETO ${formatUtcMinutes(anchorUtcMinutes + eto.revisedEtoMin)}`}>
-            {clockMinuteOnly(anchorUtcMinutes, eto.revisedEtoMin)}
-            {eto.deltaMin !== 0 && (
-              <span
-                className="ml-1 text-xs"
-                style={{ color: eto.deltaMin > 0 ? 'var(--signal-delta-late)' : 'var(--signal-delta-early)' }}
-              >
-                {formatDeltaMinutes(eto.deltaMin)}
-              </span>
-            )}
-          </ReadOnly>
-        )
+        // ETO ist seit Phase 18 auf der Kontrollpunkt-Zeile (siehe
+        // CheckpointRow.tsx) — die Spalte existiert hier weiter (gleiche
+        // Spaltenbreite über alle Zeilen), bleibt aber leer.
+        return null
     }
   }
 }
@@ -167,12 +159,4 @@ function courseLabel(deg: number): string {
  * Gegensatz zu Kursangaben (courseLabel) kein 0–359°-Wert. */
 function signedDegLabel(deg: number): string {
   return `${deg > 0 ? '+' : ''}${deg}°`
-}
-
-function ReadOnly({ children, title }: { children: React.ReactNode; title?: string }) {
-  return (
-    <span className="mono-num text-xs whitespace-nowrap sm:text-sm" style={{ color: 'var(--text-primary)' }} title={title}>
-      {children}
-    </span>
-  )
 }

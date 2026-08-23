@@ -369,6 +369,39 @@ npx vitest run    # Unit-Tests
   Überflug-Tap (nächstes Leg wird danach korrekt aktiv/hervorgehoben),
   Bemerkungen-Ein-/Ausklappen und Spaltenauswahl weiterhin fehlerfrei;
   alle 105 Tests grün.
+- **Phase 18 (abgeschlossen):** ETO und ATO (samt "Überflug"-Taster)
+  ziehen von der Streckendaten-Zeile auf die Kontrollpunkt-Zeile um —
+  fachlich korrekter, da beide die Überflugzeit *dieses* Punktes
+  beschreiben, nicht die Strecke davor, und näher am Papierformular, wo
+  Überflugzeit/ATO ebenfalls neben dem Kontrollpunkt-Feld stehen (Rückbau
+  der expliziten Phase-17-Entscheidung, auf erneuten Nutzerwunsch). Damit
+  weiterhin eindeutig bleibt, zu welchem Kontrollpunkt ETO/ATO gehören —
+  gerade wenn der Name links beim horizontalen Scrollen schon aus dem
+  Sichtbereich gelaufen ist — wird der Kontrollpunktname zwischen ATO und
+  Bemerkungen noch einmal schreibgeschützt gespiegelt: eine neue, immer
+  sichtbare Spalte ("⧉"-Symbol in der Kopfzeile).
+  - Der Namens-Banner der Kontrollpunkt-Zeile überspannt jetzt nur noch
+    Kontrollpunkt plus die restlichen (ETO ausgenommen) sichtbaren
+    Spalten — ETO und ATO sind eigene, echte Zellen dahinter.
+  - Sticky/Hervorhebung wandert mit: die Kontrollpunkt-Zeile, die gerade
+    ETO/ATO/"Überflug" des aktiven Legs trägt, bleibt jetzt beim Scrollen
+    oben fixiert (vorher die Streckendaten-Zeile); die Streckendaten-
+    Zeile davor und der Startpunkt dieses Legs bekommen die leichte
+    Randmarkierung für den "von … nach …"-Kontext, ohne selbst zu
+    fixieren (ACTIVE_LIGHT_STYLE/activeStrongStyle, neu in cells.tsx,
+    von beiden Zeilentypen genutzt).
+  - ETO bleibt über die Spaltenauswahl ein-/ausblendbar (Kontrollpunkt-
+    Zeile lässt die Zelle dann einfach weg); ATO und die gespiegelte
+    Kontrollpunkt-Spalte sind wie Kontrollpunkt selbst immer sichtbar.
+  - Per Playwright verifiziert: ETO/ATO/"Überflug" erscheinen korrekt auf
+    der jeweiligen Kontrollpunkt-Zeile, die gespiegelte Spalte zeigt für
+    jede Kontrollpunkt-Zeile exakt denselben Namen wie die Kontrollpunkt-
+    Spalte (und bleibt auf Streckendaten-Zeilen leer), Überflug-Tap
+    schaltet die Sticky-/Hervorhebung korrekt auf die nächste
+    Kontrollpunkt-Zeile weiter, Kontrollpunkt-Bearbeitung, Bemerkungen-
+    Toggle und Ein-/Ausblenden der ETO-Spalte (inkl. Konsolen-/
+    Seitenfehler-Prüfung) bleiben fehlerfrei; alle 105 Tests grün,
+    tsc/Lint/Build sauber.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

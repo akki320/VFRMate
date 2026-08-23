@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from 'react'
 import { useState } from 'react'
 
 // Schrift und Innenabstand sind bewusst responsiv (kleiner unterhalb von
@@ -140,4 +141,40 @@ export function TextCell({ label, value, onChange, placeholder, className, width
       style={{ ...inputStyle, ...(widthCh !== undefined ? { width: `${widthCh}ch`, minWidth: `${widthCh}ch` } : { minWidth: '7ch' }) }}
     />
   )
+}
+
+/** Anzeige eines schreibgeschützten (automatisch berechneten) Werts —
+ * gemeinsam von der Streckendaten- und der Kontrollpunkt-Zeile genutzt
+ * (z. B. WCA/MC/MH bzw. ETO). */
+export function ReadOnly({ children, title }: { children: ReactNode; title?: string }) {
+  return (
+    <span className="mono-num text-xs whitespace-nowrap sm:text-sm" style={{ color: 'var(--text-primary)' }} title={title}>
+      {children}
+    </span>
+  )
+}
+
+/** Gemeinsame Hervorhebungs-Stile für "diese Zeile gehört zum aktiven
+ * Leg" — in zwei Abstufungen, je nachdem, ob die Zeile selbst die
+ * Handlung (ETO/ATO/"Überflug", seit Phase 18 auf der Kontrollpunkt-
+ * Zeile) trägt oder nur zum Kontext dieses Legs gehört:
+ * - STRONG: die Kontrollpunkt-Zeile, die gerade ETO/ATO/"Überflug"
+ *   zeigt — bleibt zusätzlich beim Scrollen oben fixiert (siehe
+ *   CheckpointRow.tsx), `top` dafür separat gesetzt.
+ * - LIGHT: alles andere, was noch zu diesem Leg gehört (die
+ *   Streckendaten-Zeile davor und der Kontrollpunkt, von dem aus das
+ *   Leg startet) — nur die Randmarkierung, nicht fixiert, damit klar
+ *   bleibt, von wo nach wo sich die fixierte Zeile bezieht. */
+export const ACTIVE_LIGHT_STYLE: CSSProperties = {
+  boxShadow: 'inset 4px 0 0 var(--signal-active-border)',
+  backgroundColor: 'var(--bg-elevated)',
+}
+export function activeStrongStyle(topPx: number): CSSProperties {
+  return {
+    position: 'sticky',
+    top: topPx,
+    zIndex: 5,
+    backgroundColor: 'var(--signal-active-bg)',
+    boxShadow: 'inset 4px 0 0 var(--signal-active-border)',
+  }
 }
