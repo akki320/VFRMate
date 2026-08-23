@@ -138,8 +138,35 @@ für eine spätere Wiederverwendung.
   bei `window.print()` sichtbar wird. Bewusst in festen
   Schwarz-auf-Weiß-Farben statt der Theme-Variablen, damit der Ausdruck
   unabhängig vom Nacht-/Tagmodus lesbar bleibt. Zeigt immer **alle**
-  Spalten (unabhängig von der Bildschirm-Spaltenauswahl) plus den
-  Pflichthinweis in der Fußzeile.
+  Spalten (unabhängig von der Bildschirm-Spaltenauswahl), immer als
+  volle "HH:MM" (siehe unten zur Minutenkurzschreibweise auf dem
+  Bildschirm), plus den Pflichthinweis in der Fußzeile.
+
+### Weitere Bedienelemente (nach Nutzer-Feedback)
+
+- **Flug löschen** — in der Flugliste (`NoFlightScreen`) pro Zeile, und im
+  Kopf der Flugansicht für den aktuell geöffneten Flug.
+- **Flug zurücksetzen** — löscht alle ATOs und die ATD, ohne die Planung
+  anzurühren (`flightStore.resetProgress`); die ETOs fallen dadurch auf
+  ihre ursprünglich geplanten Werte zurück. Deaktiviert, solange noch kein
+  Fortschritt existiert.
+- **ETO/ATO nur als Minute** (`domain/format.ts::formatMinutesOnly`) — auf
+  dem Bildschirm wird nur die Minute innerhalb der Stunde gezeigt (z.B.
+  "21" für 08:21, die übliche Kurzschreibweise, wenn die Stunde aus dem
+  Zusammenhang klar ist); die volle Zeit steht als Tooltip (`title`)
+  daneben. Die Long-Press-Korrektur eines ATO akzeptiert dieselbe
+  Kurzschreibweise: `parseMinutesOrTime` löst eine eingegebene Minute
+  gegen die geplante ETO (bzw. das bisherige ATO) als Anker zur nächst-
+  passenden vollen Stunde auf — inklusive Stundenüberlauf (z.B. Anker
+  08:55 + Eingabe "03" → 09:03). Eine volle "HH:MM"-Eingabe funktioniert
+  weiterhin.
+- **ETO und ATO stehen immer nebeneinander** — "eto" ist bewusst der
+  letzte Eintrag in `columns.ts`, ATO ist als angeheftete Spalte direkt
+  danach gerendert; nichts kann sich dazwischenschieben.
+- **Gesamtstrecke statt "Entf. Gesamt"-Spalte** — die laufende
+  Streckensumme ist keine Tabellenspalte mehr (auf jeder Zeile wiederholt
+  kaum zu gebrauchen), sondern ein einzelner Summenwert oberhalb der
+  Tabelle.
 
 **PWA-Offlinefähigkeit verifiziert:** Mit Playwright (`context.setOffline(true)`,
 also vollständig gekapptes Netzwerk) neu geladen, lädt die App
@@ -182,6 +209,11 @@ npx vitest run    # Unit-Tests
   Muster-Verwaltung) wich einer einzigen, dem offiziellen
   LBA-Papierformular nachgebauten Tabelle mit frei ein-/ausblendbaren
   Spalten. ATO-Tap → automatische ETO-Neuschätzung blieb erhalten.
+- **Phase 7 (abgeschlossen):** Flug löschen (Liste + Kopfzeile), Flug
+  zurücksetzen (ATOs/ATD löschen, Planung bleibt), "Entf. Gesamt" als
+  Summenwert oberhalb statt als Spalte, ETO/ATO immer nebeneinander,
+  ETO/ATO nur als Minute mit Anker-basierter Stundenauflösung bei der
+  Long-Press-Korrektur.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

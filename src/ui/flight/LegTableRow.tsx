@@ -1,4 +1,4 @@
-import { formatDeltaMinutes, formatUtcMinutes } from '../../domain/format'
+import { formatDeltaMinutes, formatMinutesOnly, formatUtcMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
 import type { ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
@@ -90,7 +90,7 @@ export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx,
       ))}
 
       <td className="px-1.5 py-1.5 align-middle text-right">
-        <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} />
+        <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} anchorUtcMinutes={computed.etoUtcMin} />
       </td>
     </tr>
   )
@@ -194,8 +194,6 @@ export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx,
             style={{ ...inputStyle, minWidth: '5ch' }}
           />
         )
-      case 'distAccum':
-        return <ReadOnly>{row.cumulativeDistanceNm.toFixed(1)}</ReadOnly>
       case 'distRemain':
         return <ReadOnly>{computed.remainingDistanceNm.toFixed(1)}</ReadOnly>
       case 'gs':
@@ -208,8 +206,8 @@ export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx,
         return <ReadOnly>{computed.remainingTimeMin}</ReadOnly>
       case 'eto':
         return (
-          <ReadOnly>
-            {formatUtcMinutes(computed.etoUtcMin)}
+          <ReadOnly title={formatUtcMinutes(computed.etoUtcMin)}>
+            {formatMinutesOnly(computed.etoUtcMin)}
             {reEstimated.deltaMin !== 0 && (
               <span
                 className="ml-1 text-xs"
@@ -239,9 +237,9 @@ function courseLabel(deg: number): string {
   return `${String(deg).padStart(3, '0')}°`
 }
 
-function ReadOnly({ children }: { children: React.ReactNode }) {
+function ReadOnly({ children, title }: { children: React.ReactNode; title?: string }) {
   return (
-    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }} title={title}>
       {children}
     </span>
   )

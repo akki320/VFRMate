@@ -21,10 +21,14 @@ export function FlightScreen() {
   const viewModel = useFlightTableViewModel()
   const closeCurrent = useFlightStore((s) => s.closeCurrent)
   const addLeg = useFlightStore((s) => s.addLeg)
+  const removeFlight = useFlightStore((s) => s.remove)
+  const resetProgress = useFlightStore((s) => s.resetProgress)
   const columns = useColumnVisibility()
 
   if (!viewModel) return null
   const { flight, rows, activeIndex } = viewModel
+  const totalDistanceNm = rows.length > 0 ? rows[rows.length - 1].cumulativeDistanceNm : 0
+  const hasProgress = flight.legActuals.length > 0 || flight.atdUtcMin !== undefined
 
   const warnings: string[] = []
   if (viewModel.arrivesAfterSunset && viewModel.estimatedArrivalUtcMin !== undefined) {
@@ -60,6 +64,29 @@ export function FlightScreen() {
           </button>
           <button
             type="button"
+            disabled={!hasProgress}
+            onClick={() => {
+              if (confirm('Flug zurücksetzen? Alle ATOs und die ATD werden gelöscht, die Planung bleibt erhalten.')) {
+                void resetProgress()
+              }
+            }}
+            className="rounded border px-3 py-1.5 text-xs disabled:opacity-30"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            Flug zurücksetzen
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Flug "${flight.name}" wirklich löschen?`)) void removeFlight(flight.id)
+            }}
+            className="rounded border px-3 py-1.5 text-xs"
+            style={{ borderColor: 'var(--signal-warning-border)', color: 'var(--signal-warning-text)' }}
+          >
+            Flug löschen
+          </button>
+          <button
+            type="button"
             onClick={closeCurrent}
             className="rounded border px-3 py-1.5 text-xs"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
@@ -80,6 +107,11 @@ export function FlightScreen() {
       )}
 
       <section className="mt-3">
+        {rows.length > 0 && (
+          <p className="mono-num mb-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Gesamtstrecke: <span style={{ color: 'var(--text-primary)' }}>{totalDistanceNm.toFixed(1)} NM</span>
+          </p>
+        )}
         <LegTable rows={rows} visibleColumns={columns.visible} />
         <button
           type="button"

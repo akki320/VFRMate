@@ -38,6 +38,10 @@ interface FlightStoreState {
 
   recordAto: (legId: string, atoUtcMin: number) => Promise<void>
   clearAto: (legId: string) => Promise<void>
+  /** Setzt den Flugfortschritt zurück: löscht alle ATOs und die ATD, ohne
+   * Legs/Planung anzurühren — die ETOs fallen dadurch wieder auf ihre
+   * ursprünglich geplanten Werte zurück (kein Re-Estimate-Delta mehr). */
+  resetProgress: () => Promise<void>
 }
 
 export const useFlightStore = create<FlightStoreState>((set, get) => ({
@@ -149,5 +153,9 @@ export const useFlightStore = create<FlightStoreState>((set, get) => ({
       ...flight,
       legActuals: flight.legActuals.filter((a) => a.legId !== legId),
     }))
+  },
+
+  resetProgress: async () => {
+    await get().patchCurrentFlight((flight) => ({ ...flight, legActuals: [], atdUtcMin: undefined }))
   },
 }))

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { formatUtcMinutes, parseUtcMinutes } from '../../domain/format'
+import { formatMinutesOnly, formatUtcMinutes, parseMinutesOrTime } from '../../domain/format'
 import { currentUtcMinutes } from '../hooks/useUtcClock'
 import { useFlightStore } from '../../store/flightStore'
 
@@ -9,6 +9,9 @@ interface AtoCellProps {
   legId: string
   ato: number | undefined
   isActive: boolean
+  /** Geplante ETO dieses Legs — Anker, um eine per Hand eingegebene reine
+   * Minutenzahl ("21") auf die richtige Stunde aufzulösen. */
+  anchorUtcMinutes: number
 }
 
 /**
@@ -18,8 +21,12 @@ interface AtoCellProps {
  * erfasstes ATO lässt sich per Long-Press manuell korrigieren — ein
  * einfacher Tap tut dort bewusst nichts, damit man es nicht aus Versehen
  * verstellt.
+ *
+ * Angezeigt und eingegeben wird nur die Minute (z.B. "21" für 08:21) —
+ * die übliche Kurzschreibweise, wenn die Stunde aus dem Zusammenhang klar
+ * ist. Eine volle "HH:MM"-Eingabe funktioniert bei Bedarf weiterhin.
  */
-export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
+export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps) {
   const recordAto = useFlightStore((s) => s.recordAto)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -27,7 +34,7 @@ export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
 
   const startLongPress = () => {
     timerRef.current = window.setTimeout(() => {
-      setDraft(ato !== undefined ? formatUtcMinutes(ato) : '')
+      setDraft(ato !== undefined ? formatMinutesOnly(ato) : '')
       setEditing(true)
     }, LONG_PRESS_MS)
   }
@@ -39,7 +46,7 @@ export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
   }
 
   const commitEdit = () => {
-    const parsed = parseUtcMinutes(draft)
+    const parsed = parseMinutesOrTime(draft, ato ?? anchorUtcMinutes)
     if (!Number.isNaN(parsed)) void recordAto(legId, parsed)
     setEditing(false)
   }
@@ -56,9 +63,9 @@ export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
           if (e.key === 'Escape') setEditing(false)
         }}
         onBlur={commitEdit}
-        placeholder="HH:MM"
-        aria-label="ATO korrigieren (HH:MM)"
-        className="mono-num w-20 rounded border px-2 py-1 text-base"
+        placeholder="MM"
+        aria-label="ATO korrigieren (Minute, z.B. 21, oder HH:MM)"
+        className="mono-num w-14 rounded border px-2 py-1 text-base"
         style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
@@ -76,9 +83,10 @@ export function AtoCell({ legId, ato, isActive }: AtoCellProps) {
         onPointerCancel={cancelLongPress}
         className="mono-num rounded px-2 text-base"
         style={{ color: 'var(--text-primary)', minHeight: 44 }}
+        title={formatUtcMinutes(ato)}
         aria-label={`ATO ${formatUtcMinutes(ato)}, gedrückt halten zum Korrigieren`}
       >
-        {formatUtcMinutes(ato)}
+        {formatMinutesOnly(ato)}
       </button>
     )
   }

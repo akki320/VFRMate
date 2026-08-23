@@ -145,6 +145,22 @@ describe('useFlightStore', () => {
     expect(useFlightStore.getState().currentFlight!.legActuals).toEqual([])
   })
 
+  it('resetProgress clears all ATOs and the ATD, keeping legs/planning intact', async () => {
+    await useFlightStore.getState().createNew(makeFlightInput({ atdUtcMin: 481 }))
+    await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })
+    await useFlightStore.getState().addLeg({ waypoint: 'B', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })
+    const [legA, legB] = useFlightStore.getState().currentFlight!.legs
+    await useFlightStore.getState().recordAto(legA.id, 495)
+    await useFlightStore.getState().recordAto(legB.id, 520)
+
+    await useFlightStore.getState().resetProgress()
+
+    const flight = useFlightStore.getState().currentFlight!
+    expect(flight.legActuals).toEqual([])
+    expect(flight.atdUtcMin).toBeUndefined()
+    expect(flight.legs.map((l) => l.waypoint)).toEqual(['A', 'B'])
+  })
+
   it('duplicateAsTemplate clones legs with fresh ids and clears ATD/legActuals', async () => {
     await useFlightStore.getState().createNew(makeFlightInput({ atdUtcMin: 481 }))
     await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })

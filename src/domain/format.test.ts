@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDeltaMinutes, formatUtcMinutes, parseUtcMinutes } from './format'
+import { formatDeltaMinutes, formatMinutesOnly, formatUtcMinutes, parseMinutesOrTime, parseUtcMinutes } from './format'
 
 describe('formatUtcMinutes', () => {
   it('formats as zero-padded HH:MM', () => {
@@ -28,6 +28,44 @@ describe('parseUtcMinutes', () => {
     expect(parseUtcMinutes('25:00')).toBeNaN()
     expect(parseUtcMinutes('12:60')).toBeNaN()
     expect(parseUtcMinutes('not a time')).toBeNaN()
+  })
+})
+
+describe('formatMinutesOnly', () => {
+  it('formats just the minute-within-the-hour, zero-padded', () => {
+    expect(formatMinutesOnly(8 * 60 + 21)).toBe('21')
+    expect(formatMinutesOnly(8 * 60 + 5)).toBe('05')
+    expect(formatMinutesOnly(0)).toBe('00')
+  })
+
+  it('wraps negative values', () => {
+    expect(formatMinutesOnly(-5)).toBe('55')
+  })
+})
+
+describe('parseMinutesOrTime', () => {
+  it('resolves a bare minute value to the anchor hour when unambiguous', () => {
+    // Anchor 08:15, entering "21" should land on 08:21 (same hour, closer than 07:21/09:21).
+    expect(parseMinutesOrTime('21', 8 * 60 + 15)).toBe(8 * 60 + 21)
+  })
+
+  it('rolls over to the next hour when the minute value is smaller than the anchor', () => {
+    // Anchor 08:55, entering "03" is closer to 09:03 than 08:03 or 07:03.
+    expect(parseMinutesOrTime('03', 8 * 60 + 55)).toBe(9 * 60 + 3)
+  })
+
+  it('rolls back to the previous hour when that is closer', () => {
+    // Anchor 09:02, entering "58" is closer to 08:58 than 09:58.
+    expect(parseMinutesOrTime('58', 9 * 60 + 2)).toBe(8 * 60 + 58)
+  })
+
+  it('still accepts a full HH:MM entry', () => {
+    expect(parseMinutesOrTime('14:07', 8 * 60)).toBe(14 * 60 + 7)
+  })
+
+  it('returns NaN for an out-of-range bare value or garbage input', () => {
+    expect(parseMinutesOrTime('60', 8 * 60)).toBeNaN()
+    expect(parseMinutesOrTime('abc', 8 * 60)).toBeNaN()
   })
 })
 

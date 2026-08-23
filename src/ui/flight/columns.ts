@@ -4,6 +4,16 @@
  * sind immer sichtbar (Zeilenidentität bzw. die Kernfunktion "ATO tippen
  * → ETO der Folgepunkte neu schätzen"); alle anderen Spalten lassen sich
  * beliebig ein-/ausblenden (siehe useColumnVisibility.ts).
+ *
+ * "eto" steht bewusst als letzter Eintrag: ETO und ATO sollen immer
+ * nebeneinander stehen, und ATO wird als fest angeheftete Spalte direkt
+ * nach den hier aufgeführten (sichtbaren) Spalten gerendert (siehe
+ * LegTable.tsx) — nichts darf sich also hinter "eto" einreihen.
+ *
+ * "Entf. Gesamt" (laufende Streckensumme) ist keine eigene Spalte mehr,
+ * sondern steht als einzelner Summenwert oberhalb der Tabelle (siehe
+ * FlightScreen.tsx) — als Spalte war der Wert auf jeder Zeile wiederholt
+ * kaum zu gebrauchen.
  */
 
 export const COLUMN_IDS = [
@@ -17,14 +27,13 @@ export const COLUMN_IDS = [
   'mh',
   'mc',
   'distLeg',
-  'distAccum',
   'distRemain',
   'gs',
   'timeLeg',
   'timeAccum',
   'timeRemain',
-  'eto',
   'remarks',
+  'eto',
 ] as const
 
 export type ColumnId = (typeof COLUMN_IDS)[number]
@@ -42,7 +51,6 @@ export const COLUMN_LABELS: Record<ColumnId, string> = {
   mh: 'MH (mwSK)',
   mc: 'MC (mwK)',
   distLeg: 'Entf. Abschnitt',
-  distAccum: 'Entf. Gesamt',
   distRemain: 'Entf. Rest',
   gs: 'GS (VG)',
   timeLeg: 'Zeit Abschnitt',
@@ -56,7 +64,7 @@ export const COLUMN_LABELS: Record<ColumnId, string> = {
 export const COLUMN_GROUPS: { label: string; columns: ColumnId[] }[] = [
   { label: 'Höhe', columns: ['safetyAlt', 'plannedAlt'] },
   { label: 'Navigation', columns: ['tas', 'wind', 'tc', 'wca', 'var', 'mh', 'mc'] },
-  { label: 'Entfernung', columns: ['distLeg', 'distAccum', 'distRemain'] },
+  { label: 'Entfernung', columns: ['distLeg', 'distRemain'] },
   { label: 'Zeit', columns: ['gs', 'timeLeg', 'timeAccum', 'timeRemain', 'eto'] },
   { label: 'Sonstiges', columns: ['remarks'] },
 ]

@@ -11,6 +11,7 @@ export function NoFlightScreen() {
   const open = useFlightStore((s) => s.open)
   const createNew = useFlightStore((s) => s.createNew)
   const importFlight = useFlightStore((s) => s.importFlight)
+  const removeFlight = useFlightStore((s) => s.remove)
   const [creatingDemo, setCreatingDemo] = useState(false)
   const [importError, setImportError] = useState<string | undefined>(undefined)
 
@@ -51,18 +52,30 @@ export function NoFlightScreen() {
             Gespeicherte Flüge
           </h2>
           {flights.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => open(f.id)}
-              className="rounded border px-4 py-3 text-left"
-              style={{ borderColor: 'var(--border)', minHeight: 56, color: 'var(--text-primary)' }}
-            >
-              <div className="font-medium">{f.name}</div>
-              <div className="mono-num text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {f.departureAerodrome} → {f.destinationAerodrome} · {f.date}
-              </div>
-            </button>
+            <div key={f.id} className="flex items-stretch gap-2">
+              <button
+                type="button"
+                onClick={() => open(f.id)}
+                className="flex-1 rounded border px-4 py-3 text-left"
+                style={{ borderColor: 'var(--border)', minHeight: 56, color: 'var(--text-primary)' }}
+              >
+                <div className="font-medium">{f.name}</div>
+                <div className="mono-num text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {f.departureAerodrome} → {f.destinationAerodrome} · {f.date}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Flug "${f.name}" wirklich löschen?`)) void removeFlight(f.id)
+                }}
+                aria-label={`Flug ${f.name} löschen`}
+                className="rounded border px-3 text-sm"
+                style={{ borderColor: 'var(--signal-warning-border)', color: 'var(--signal-warning-text)', minWidth: 44 }}
+              >
+                ✕
+              </button>
+            </div>
           ))}
         </div>
       )}
