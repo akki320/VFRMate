@@ -337,6 +337,38 @@ npx vitest run    # Unit-Tests
   klein sein und die aktive Zeile teilweise darunter verschwinden
   lassen); per Playwright exakt 0px Abstand zwischen Kopfzeile und
   aktiver Zeile nach dem Umbruch bestätigt.
+- **Phase 17 (abgeschlossen):** Streckendaten liegen jetzt optisch
+  zwischen den beiden Kontrollpunkten, auf die sie sich beziehen — wie
+  im Papierformular, wo die Kontrollpunktnamen an den Zeilengrenzen
+  stehen und die Streckendaten (Sicherh.-Höhe bis ATO) dazwischen
+  gestaffelt sind, statt in derselben Zeile wie einer der beiden Punkte.
+  Umgesetzt durch zwei abwechselnde Zeilentypen: eine schmale
+  Kontrollpunkt-Zeile (nur Name, plus bei einem echten Leg die
+  Verschieben-/Löschen-Knöpfe, jetzt in einer eigenen CheckpointRow.tsx)
+  und die bisherige Streckendaten-Zeile (jetzt ohne Kontrollpunktname
+  und ohne diese Knöpfe). Reihenfolge: Startflugplatz,
+  Streckendaten Leg 1, Kontrollpunkt Leg 1, Streckendaten Leg 2,
+  Kontrollpunkt Leg 2, … — der Kontrollpunkt vor einer Streckendaten-
+  Zeile ist der Startflugplatz bzw. das vorige Legs Kontrollpunkt, der
+  danach ist dieses Legs eigener, exakt wie im Formular. Der
+  Startflugplatz bekommt dafür eine eigene, nicht editierbare
+  Kontrollpunkt-Zeile vor dem ersten Leg (Name kommt aus dem Flugkopf,
+  dort weiterhin editierbar). Der "Überflug"-Taster (ATO-Erfassung)
+  bleibt auf ausdrücklichen Wunsch des Nutzers bei der Streckendaten-
+  Zeile statt bei der Kontrollpunkt-Zeile — er gehört fachlich zur
+  Zeile, die ohnehin die restliche Streckenrechnung dieses Legs zeigt.
+  Kopfzeile und die aktive Streckendaten-Zeile bleiben wie zuvor beim
+  Scrollen oben fixiert; die beiden angrenzenden Kontrollpunkt-Zeilen
+  werden zusätzlich leicht hervorgehoben (ohne selbst zu fixieren), um
+  das "von … nach …" optisch zu unterstreichen. NumberCell/TextCell in
+  ein gemeinsames Modul (cells.tsx) ausgelagert, da jetzt sowohl die
+  Streckendaten- als auch die Kontrollpunkt-Zeile sie brauchen. Per
+  Playwright verifiziert: korrekte Zeilenfolge und Spaltenspannen (die
+  Kontrollpunkt-Zeile überspannt Kontrollpunkt- bis ATO-Spalte als ein
+  Banner), Kontrollpunkt-Bearbeitung, Verschieben-/Löschen-Knöpfe,
+  Überflug-Tap (nächstes Leg wird danach korrekt aktiv/hervorgehoben),
+  Bemerkungen-Ein-/Ausklappen und Spaltenauswahl weiterhin fehlerfrei;
+  alle 105 Tests grün.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

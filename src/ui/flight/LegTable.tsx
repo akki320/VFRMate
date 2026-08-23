@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { useFlightStore } from '../../store/flightStore'
 import { COLUMN_IDS, COLUMN_LABELS, COMPUTED_COLUMNS, type ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { LegTableRow } from './LegTableRow'
+import { CheckpointRow } from './CheckpointRow'
 import { useRemarksCollapsed } from './useRemarksCollapsed'
 
 /** Nur der Startwert vor der ersten Messung (siehe useLayoutEffect unten) —
@@ -15,22 +16,42 @@ interface LegTableProps {
   visibleColumns: Set<ColumnId>
   /** Minuten seit ATD (bzw. ETD ohne ATD) — Anker für den "Überflug"-Tap. */
   anchorUtcMinutes: number
+  /** Name des Startflugplatzes — eigene, nicht editierbare Kontrollpunkt-
+   * Zeile vor dem ersten Leg (siehe CheckpointRow.tsx). */
+  departureAerodrome: string
 }
 
 /**
- * Die Kerntabelle: eine Zeile pro Kontrollpunkt, wie im Papierformular —
+ * Die Kerntabelle: wie im Papierformular liegen die Streckendaten eines
+ * Legs (Sicherh.-Höhe bis ATO) optisch ZWISCHEN den beiden
+ * Kontrollpunkten, auf die sie sich beziehen — nicht in derselben Zeile
+ * wie einer von beiden. Umgesetzt durch zwei abwechselnde Zeilentypen:
+ * CheckpointRow (nur Name, plus bei einem echten Leg die Verschieben-/
+ * Löschen-Knöpfe) und LegTableRow (Streckendaten inkl. ATO). Reihenfolge:
+ * Startflugplatz, Streckendaten Leg 1, Kontrollpunkt Leg 1, Streckendaten
+ * Leg 2, Kontrollpunkt Leg 2, … — der Kontrollpunkt VOR einer
+ * Streckendaten-Zeile ist also der Startflugplatz oder das vorige Legs
+ * Kontrollpunkt, der DANACH ist dieses Legs eigener Kontrollpunkt, exakt
+ * wie im Formular. ATO sitzt bewusst weiter bei den Streckendaten (nicht
+ * beim Kontrollpunkt) — der "Überflug"-Tap gehört fachlich zur Zeile, die
+ * ohnehin die restliche Streckenrechnung dieses Legs zeigt.
+ *
  * Kontrollpunkt und ATO sind immer sichtbar, alle anderen Spalten lassen
  * sich beliebig ein-/ausblenden (siehe ColumnVisibilityMenu). Ganz rechts,
  * noch hinter ATO, steht Bemerkungen als eigene, immer sichtbare Spalte
  * mit eigenem Schnell-Ein-/Ausklapp-Schalter in der Kopfzeile (schmal
  * per Default, siehe useRemarksCollapsed.ts) statt der allgemeinen
- * Spaltenauswahl. Kopfzeile und die aktive Zeile (nächster anzufliegender
- * Punkt) bleiben beim Scrollen oben fixiert.
+ * Spaltenauswahl. Kopfzeile und die aktive Streckendaten-Zeile (nächster
+ * anzufliegender Punkt) bleiben beim Scrollen oben fixiert; die beiden
+ * angrenzenden Kontrollpunkt-Zeilen (davor/danach) werden zusätzlich leicht
+ * hervorgehoben, damit klar bleibt, von wo nach wo sich die fixierte Zeile
+ * bezieht — sie sind aber selbst nicht fixiert, um die Sticky-Logik nicht
+ * unnötig zu verkomplizieren.
  *
  * Schrift und Innenabstand von Kopf- und Datenzellen sind responsiv
  * (kleiner unterhalb des "sm"-Breakpoints) statt fest — da praktisch jede
  * Spaltenbreite in dieser Tabelle als `ch`-Wert gesetzt ist (siehe
- * LegTableRow.tsx), schrumpfen dadurch auf schmalen Bildschirmen alle
+ * cells.tsx), schrumpfen dadurch auf schmalen Bildschirmen alle
  * Spalten gemeinsam mit, statt jede Zelle einzeln pro Bildschirmgröße zu
  * pflegen. Das allein reicht aber nicht, wenn die Spaltenbreite von der
  * (nicht umbrechenden) Spaltenüberschrift vorgegeben wird: eine lange
@@ -51,7 +72,7 @@ interface LegTableProps {
  * umgebrochener Kopfzeile zu klein, und die aktive Zeile würde beim
  * Scrollen teilweise unter der (jetzt höheren) Kopfzeile verschwinden.
  */
-export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTableProps) {
+export function LegTable({ rows, visibleColumns, anchorUtcMinutes, departureAerodrome }: LegTableProps) {
   const reorderLegs = useFlightStore((s) => s.reorderLegs)
   const orderedVisible = COLUMN_IDS.filter((id) => visibleColumns.has(id))
   const remarks = useRemarksCollapsed()
@@ -130,19 +151,35 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
           </tr>
         </thead>
         <tbody>
+          <CheckpointRow
+            waypoint={departureAerodrome}
+            spanColumns={orderedVisible.length + 2}
+            highlighted={rows[0]?.isActive ?? false}
+            index={-1}
+            total={rows.length}
+            onMoveUp={() => {}}
+            onMoveDown={() => {}}
+          />
           {rows.map((row, index) => (
-            <LegTableRow
-              key={row.leg.id}
-              row={row}
-              visibleColumns={orderedVisible}
-              index={index}
-              total={rows.length}
-              headerOffsetPx={headerHeight}
-              anchorUtcMinutes={anchorUtcMinutes}
-              remarksCollapsed={remarks.collapsed}
-              onMoveUp={() => move(index, index - 1)}
-              onMoveDown={() => move(index, index + 1)}
-            />
+            <Fragment key={row.leg.id}>
+              <LegTableRow
+                row={row}
+                visibleColumns={orderedVisible}
+                headerOffsetPx={headerHeight}
+                anchorUtcMinutes={anchorUtcMinutes}
+                remarksCollapsed={remarks.collapsed}
+              />
+              <CheckpointRow
+                legId={row.leg.id}
+                waypoint={row.leg.waypoint}
+                spanColumns={orderedVisible.length + 2}
+                highlighted={row.isActive}
+                index={index}
+                total={rows.length}
+                onMoveUp={() => move(index, index - 1)}
+                onMoveDown={() => move(index, index + 1)}
+              />
+            </Fragment>
           ))}
         </tbody>
       </table>

@@ -113,7 +113,12 @@ export function FlightScreen() {
       )}
 
       <section className="mt-3">
-        <LegTable rows={rows} visibleColumns={columns.visible} anchorUtcMinutes={viewModel.anchorUtcMinutes} />
+        <LegTable
+          rows={rows}
+          visibleColumns={columns.visible}
+          anchorUtcMinutes={viewModel.anchorUtcMinutes}
+          departureAerodrome={flight.departureAerodrome}
+        />
         <button
           type="button"
           onClick={() => void addLeg({ waypoint: 'Neuer Kontrollpunkt', plannedAltitude: '', tc: 0, distanceNm: 0 })}
