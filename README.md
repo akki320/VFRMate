@@ -267,6 +267,22 @@ npx vitest run    # Unit-Tests
   neues `computeMh`). Automatisch berechnet sind damit genau: WCA, MC,
   MH, Entf. Rest, Zeit Rest, ETO — alle anderen Spalten sind
   Piloteneingabe.
+- **Phase 13 (abgeschlossen):** Bemerkungen ist keine Spalte aus der
+  allgemeinen Spaltenauswahl mehr, sondern eine eigene, immer sichtbare
+  Spalte ganz rechts — noch hinter ATO — mit einem eigenen
+  Schnell-Ein-/Ausklapp-Pfeil in der Kopfzeile statt der allgemeinen
+  Sichtbarkeitswahl (neues useRemarksCollapsed.ts, Präferenz in
+  localStorage, standardmäßig eingeklappt/schmal). Dabei eine echte,
+  vorbestehende Race-Condition gefunden und behoben: alle reinen
+  Textfelder (Kontrollpunkt, Geplante Flughöhe, Bemerkungen) committeten
+  bei jedem Tastendruck einzeln async in IndexedDB
+  (patchCurrentFlight); lösten mehrere solcher Aufrufe beim schnellen
+  Tippen in anderer Reihenfolge auf, als sie gestartet wurden, gingen
+  Buchstaben verloren oder wurden vertauscht (reproduziert u. a. an
+  "Kirchturm Musterdorf" → "Kirchturm Musterdorfe3"). Neue
+  TextCell-Komponente (analog zu NumberCell aus Phase 9) committet
+  jetzt nur noch einmal beim Verlassen des Felds statt bei jedem
+  Zeichen — schnelles Tippen verifiziert fehlerfrei.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

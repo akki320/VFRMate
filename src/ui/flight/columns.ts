@@ -12,10 +12,15 @@
  * Summenwerte oberhalb der Tabelle (siehe FlightHeader.tsx) — auf jeder
  * Zeile wiederholt waren sie kaum zu gebrauchen.
  *
- * "eto" steht bewusst als letzter Eintrag: ETO und ATO sollen immer
- * nebeneinander stehen, und ATO wird als fest angeheftete Spalte direkt
- * nach den hier aufgeführten (sichtbaren) Spalten gerendert (siehe
- * LegTable.tsx) — nichts darf sich also hinter "eto" einreihen.
+ * "eto" steht bewusst als letzter Eintrag dieser Liste: ETO und ATO sollen
+ * immer nebeneinander stehen, und ATO wird als fest angeheftete Spalte
+ * direkt nach den hier aufgeführten (sichtbaren) Spalten gerendert (siehe
+ * LegTable.tsx) — nichts aus dieser Liste darf sich also hinter "eto"
+ * einreihen. "Bemerkungen" ist deshalb keine Spalte aus dieser Liste mehr
+ * (nicht Teil der Spalten-Auswahl), sondern eine eigene, immer ganz
+ * rechts — noch hinter ATO — angeheftete Spalte mit eigenem
+ * Schnell-Ein-/Ausklapp-Schalter statt der allgemeinen Sichtbarkeitswahl
+ * (siehe useRemarksCollapsed.ts, LegTable.tsx).
  */
 
 export const COLUMN_IDS = [
@@ -33,7 +38,6 @@ export const COLUMN_IDS = [
   'gs',
   'timeLeg',
   'timeRemain',
-  'remarks',
   'eto',
 ] as const
 
@@ -57,7 +61,6 @@ export const COLUMN_LABELS: Record<ColumnId, string> = {
   timeLeg: 'Zeit Abschnitt',
   timeRemain: 'Zeit Rest',
   eto: 'ETO',
-  remarks: 'Bemerkungen',
 }
 
 /** Welche Spalten automatisch berechnet (schreibgeschützt) statt vom
@@ -70,7 +73,6 @@ export const COLUMN_GROUPS: { label: string; columns: ColumnId[] }[] = [
   { label: 'Navigation', columns: ['tas', 'wind', 'tc', 'wca', 'var', 'mh', 'mc'] },
   { label: 'Entfernung', columns: ['distLeg', 'distRemain'] },
   { label: 'Zeit', columns: ['gs', 'timeLeg', 'timeRemain', 'eto'] },
-  { label: 'Sonstiges', columns: ['remarks'] },
 ]
 
 export const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = [

@@ -85,6 +85,60 @@ function NumberCell({ label, value, onChange, widthCh = 5 }: NumberCellProps) {
   )
 }
 
+interface TextCellProps {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  className?: string
+  widthCh?: number
+}
+
+/**
+ * Freitexteingabe (Kontrollpunkt, Geplante Flughöhe, Bemerkungen). Committet
+ * bewusst nur beim Verlassen des Felds (bzw. Enter) statt bei jedem
+ * Tastendruck — anders als bei NumberCell braucht kein anderer Wert in der
+ * Zeile eine Live-Reaktion auf jeden Buchstaben.
+ *
+ * Das ist mehr als eine Kleinigkeit: `updateLeg` schreibt asynchron in
+ * IndexedDB, bevor der Zustand aktualisiert wird (patchCurrentFlight in
+ * flightStore.ts). Committet man bei jedem Tastendruck, feuern beim
+ * schnellen Tippen viele dieser async-Aufrufe gleichzeitig — lösen sie in
+ * anderer Reihenfolge auf, als sie gestartet wurden, überschreibt ein
+ * verspätet auflösender älterer Aufruf den Text eines später getippten
+ * Zeichens, und einzelne Buchstaben gehen verloren oder werden vertauscht.
+ * Ein einziger Commit am Ende der Eingabe umgeht das vollständig.
+ */
+function TextCell({ label, value, onChange, placeholder, className, widthCh }: TextCellProps) {
+  const [draft, setDraft] = useState(value)
+  const [focused, setFocused] = useState(false)
+  const [lastSeenValue, setLastSeenValue] = useState(value)
+  if (value !== lastSeenValue && !focused) {
+    setLastSeenValue(value)
+    setDraft(value)
+  }
+
+  return (
+    <input
+      type="text"
+      aria-label={label}
+      placeholder={placeholder}
+      value={draft}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        setFocused(false)
+        if (draft !== value) onChange(draft)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      className={className ?? inputClass}
+      style={{ ...inputStyle, ...(widthCh !== undefined ? { width: `${widthCh}ch`, minWidth: `${widthCh}ch` } : { minWidth: '7ch' }) }}
+    />
+  )
+}
+
 interface LegTableRowProps {
   row: FlightTableRow
   visibleColumns: ColumnId[]
@@ -92,6 +146,7 @@ interface LegTableRowProps {
   total: number
   headerOffsetPx: number
   anchorUtcMinutes: number
+  remarksCollapsed: boolean
   onMoveUp: () => void
   onMoveDown: () => void
 }
@@ -103,6 +158,7 @@ export function LegTableRow({
   total,
   headerOffsetPx,
   anchorUtcMinutes,
+  remarksCollapsed,
   onMoveUp,
   onMoveDown,
 }: LegTableRowProps) {
@@ -161,13 +217,13 @@ export function LegTableRow({
       </td>
 
       <td className="px-1.5 py-1.5 align-middle">
-        <input
-          aria-label="Kontrollpunkt"
+        <TextCell
+          label="Kontrollpunkt"
           value={leg.waypoint}
-          onChange={(e) => void updateLeg(leg.id, { waypoint: e.target.value })}
+          onChange={(v) => void updateLeg(leg.id, { waypoint: v })}
           placeholder="Kontrollpunkt"
           className={`${inputClass} font-semibold`}
-          style={{ ...inputStyle, minWidth: '9ch' }}
+          widthCh={9}
         />
       </td>
 
@@ -179,6 +235,16 @@ export function LegTableRow({
 
       <td className="px-1.5 py-1.5 align-middle text-right">
         <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} anchorUtcMinutes={anchorUtcMinutes} />
+      </td>
+
+      <td className="px-1.5 py-1.5 align-middle">
+        <TextCell
+          label="Bemerkungen"
+          value={leg.remarks ?? ''}
+          onChange={(v) => void updateLeg(leg.id, { remarks: v })}
+          className={`${inputClass} font-sans`}
+          widthCh={remarksCollapsed ? 4 : 18}
+        />
       </td>
     </tr>
   )
@@ -195,13 +261,11 @@ export function LegTableRow({
         )
       case 'plannedAlt':
         return (
-          <input
-            type="text"
-            aria-label="Geplante Flughöhe"
+          <TextCell
+            label="Geplante Flughöhe"
             value={leg.plannedAltitude}
-            onChange={(e) => void updateLeg(leg.id, { plannedAltitude: e.target.value })}
-            className={inputClass}
-            style={{ ...inputStyle, minWidth: '7ch' }}
+            onChange={(v) => void updateLeg(leg.id, { plannedAltitude: v })}
+            widthCh={7}
           />
         )
       case 'tas':
@@ -269,17 +333,6 @@ export function LegTableRow({
               </span>
             )}
           </ReadOnly>
-        )
-      case 'remarks':
-        return (
-          <input
-            type="text"
-            aria-label="Bemerkungen"
-            value={leg.remarks ?? ''}
-            onChange={(e) => void updateLeg(leg.id, { remarks: e.target.value })}
-            className={`${inputClass} font-sans`}
-            style={{ ...inputStyle, minWidth: '10ch' }}
-          />
         )
     }
   }

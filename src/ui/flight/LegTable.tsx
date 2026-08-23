@@ -2,6 +2,7 @@ import { useFlightStore } from '../../store/flightStore'
 import { COLUMN_IDS, COLUMN_LABELS, COMPUTED_COLUMNS, type ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { LegTableRow } from './LegTableRow'
+import { useRemarksCollapsed } from './useRemarksCollapsed'
 
 const HEADER_HEIGHT_PX = 40
 
@@ -15,13 +16,17 @@ interface LegTableProps {
 /**
  * Die Kerntabelle: eine Zeile pro Kontrollpunkt, wie im Papierformular —
  * Kontrollpunkt und ATO sind immer sichtbar, alle anderen Spalten lassen
- * sich beliebig ein-/ausblenden (siehe ColumnVisibilityMenu). Kopfzeile
- * und die aktive Zeile (nächster anzufliegender Punkt) bleiben beim
- * Scrollen oben fixiert.
+ * sich beliebig ein-/ausblenden (siehe ColumnVisibilityMenu). Ganz rechts,
+ * noch hinter ATO, steht Bemerkungen als eigene, immer sichtbare Spalte
+ * mit eigenem Schnell-Ein-/Ausklapp-Schalter in der Kopfzeile (schmal
+ * per Default, siehe useRemarksCollapsed.ts) statt der allgemeinen
+ * Spaltenauswahl. Kopfzeile und die aktive Zeile (nächster anzufliegender
+ * Punkt) bleiben beim Scrollen oben fixiert.
  */
 export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTableProps) {
   const reorderLegs = useFlightStore((s) => s.reorderLegs)
   const orderedVisible = COLUMN_IDS.filter((id) => visibleColumns.has(id))
+  const remarks = useRemarksCollapsed()
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= rows.length || from === to) return
@@ -68,6 +73,19 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
               </th>
             ))}
             <th className="px-1.5 py-2 text-right font-medium">ATO</th>
+            <th className="px-1.5 py-2 font-medium whitespace-nowrap">
+              <button
+                type="button"
+                onClick={remarks.toggle}
+                aria-label={remarks.collapsed ? 'Bemerkungen ausklappen' : 'Bemerkungen einklappen'}
+                title={remarks.collapsed ? 'Bemerkungen ausklappen' : 'Bemerkungen einklappen'}
+                className="mr-1 rounded border px-1 text-xs leading-none normal-case"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                {remarks.collapsed ? '◀' : '▶'}
+              </button>
+              {!remarks.collapsed && 'Bemerkungen'}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -80,6 +98,7 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
               total={rows.length}
               headerOffsetPx={HEADER_HEIGHT_PX}
               anchorUtcMinutes={anchorUtcMinutes}
+              remarksCollapsed={remarks.collapsed}
               onMoveUp={() => move(index, index - 1)}
               onMoveDown={() => move(index, index + 1)}
             />
