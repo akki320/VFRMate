@@ -152,13 +152,13 @@ export interface Wind {
  *
  * Auf Wunsch des Nutzers sind die meisten Felder direkte Eingabewerte, wie
  * auf dem Papierformular per Hand ausgefüllt. Automatisch berechnet werden
- * (siehe domain/flightPlan.ts): WCA und GS (aus TC, TAS und Wind,
- * Winddreieck), MC (aus TC und VAR), Gesamtstrecke/Gesamtzeit (Summen über
- * alle Legs), Entf. Rest/Zeit Rest (Gesamtstrecke/-zeit minus die Summe
- * bis einschließlich diesem Leg) sowie ETO (aus den Zeit-Abschnitt-Werten
- * fortgeschrieben). MH bleibt bewusst ein reines Eingabefeld — die App
- * rechnet daraus nicht automatisch weiter, das bleibt dem Piloten
- * überlassen.
+ * (siehe domain/flightPlan.ts): WCA (aus TC, TAS und Wind, Winddreieck),
+ * MC (aus TC und VAR), MH (aus TC, WCA und VAR), Gesamtstrecke/Gesamtzeit
+ * (Summen über alle Legs), Entf. Rest/Zeit Rest (Gesamtstrecke/-zeit minus
+ * die Summe bis einschließlich diesem Leg) sowie ETO (aus den
+ * Zeit-Abschnitt-Werten fortgeschrieben). GS bleibt bewusst ein reines
+ * Eingabefeld — die App rechnet daraus nicht automatisch weiter, das
+ * bleibt dem Piloten überlassen.
  */
 export interface Leg {
   id: string
@@ -172,10 +172,10 @@ export interface Leg {
   plannedAltitude: string
   /** Rechtweisender Kurs (True Course) in °, 0–359. */
   tc: number
-  /** Missweisender Steuerkurs (MH/mwSK) in °, vom Piloten eingetragen. */
-  mh?: number
   /** Distanz zum vorherigen Kontrollpunkt in NM. */
   distanceNm: number
+  /** Groundspeed (GS/VG) in kt, vom Piloten eingetragen. */
+  gs?: number
   /** Flugzeit dieses Abschnitts (Zeit Abschnitt) in Minuten, vom Piloten
    * eingetragen — Basis für Gesamtzeit, Zeit Rest und die ETO-Kette. */
   timeMin?: number

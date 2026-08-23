@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDeltaMinutes, formatHoursMinutes, formatUtcMinutes, parseUtcMinutes } from './format'
+import { clockMinuteOnly, formatDeltaMinutes, formatHoursMinutes, formatUtcMinutes, parseUtcMinutes } from './format'
 
 describe('formatUtcMinutes', () => {
   it('formats as zero-padded HH:MM', () => {
@@ -45,6 +45,24 @@ describe('formatHoursMinutes', () => {
 
   it('formats a negative value with a leading minus', () => {
     expect(formatHoursMinutes(-65)).toBe('−1:05')
+  })
+})
+
+describe('clockMinuteOnly', () => {
+  it('shows the minute of the resulting clock time (ATD 15:15 + 1 min -> 16)', () => {
+    expect(clockMinuteOnly(15 * 60 + 15, 1)).toBe('16')
+  })
+
+  it('wraps past the hour', () => {
+    expect(clockMinuteOnly(15 * 60 + 15, 75)).toBe('30') // 15:15 + 75min = 16:30
+  })
+
+  it('zero-pads single-digit minutes', () => {
+    expect(clockMinuteOnly(15 * 60, 6)).toBe('06')
+  })
+
+  it('wraps past midnight', () => {
+    expect(clockMinuteOnly(23 * 60 + 50, 20)).toBe('10') // 23:50 + 20min = 00:10
   })
 })
 

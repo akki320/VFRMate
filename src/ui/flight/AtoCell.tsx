@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { currentUtcMinutes } from '../hooks/useUtcClock'
+import { clockMinuteOnly, formatUtcMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
 
 const LONG_PRESS_MS = 550
@@ -23,7 +24,9 @@ interface AtoCellProps {
  * siehe domain/flightPlan.ts::reEstimateEto). Ein bereits erfasstes ATO
  * lässt sich per Long-Press manuell korrigieren — einfach als Minutenzahl,
  * ohne Bezug zu einer Uhrzeit. Ein einfacher Tap tut dort bewusst nichts,
- * damit man es nicht aus Versehen verstellt.
+ * damit man es nicht aus Versehen verstellt. Angezeigt wird (wie bei ETO,
+ * siehe LegTableRow.tsx) nur die Minute der sich aus Anker + verstrichener
+ * Zeit ergebenden Uhrzeit — die volle Uhrzeit steht als Tooltip daneben.
  */
 export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps) {
   const recordAto = useFlightStore((s) => s.recordAto)
@@ -83,9 +86,10 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
         onPointerCancel={cancelLongPress}
         className="mono-num rounded px-2 text-base"
         style={{ color: 'var(--text-primary)', minHeight: 44 }}
+        title={`ATO ${formatUtcMinutes(anchorUtcMinutes + ato)}`}
         aria-label={`ATO ${ato} min, gedrückt halten zum Korrigieren`}
       >
-        {ato}
+        {clockMinuteOnly(anchorUtcMinutes, ato)}
       </button>
     )
   }

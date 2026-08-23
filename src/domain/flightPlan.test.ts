@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeLegDerived, computeMc, reEstimateEto, totalDistanceNm, totalTimeMin } from './flightPlan'
+import { computeLegDerived, computeMc, computeMh, reEstimateEto, totalDistanceNm, totalTimeMin } from './flightPlan'
 import type { Flight, Leg } from './types'
 
 function makeLeg(overrides: Partial<Leg> = {}): Leg {
@@ -36,6 +36,14 @@ describe('computeMc', () => {
     expect(computeMc(90, 3)).toBe(87)
     expect(computeMc(2, 5)).toBe(357)
     expect(computeMc(90, -3)).toBe(93)
+  })
+})
+
+describe('computeMh', () => {
+  it('is TC plus WCA minus VAR, normalized to 0-359', () => {
+    expect(computeMh(90, 5, 3)).toBe(92)
+    expect(computeMh(2, -1, 5)).toBe(356)
+    expect(computeMh(90, 0, -3)).toBe(93)
   })
 })
 
@@ -92,19 +100,18 @@ describe('computeLegDerived', () => {
     expect(derived[0].wca).toBe(0)
   })
 
-  it('computes GS from TAS, WCA and wind via the wind triangle', () => {
-    // Headwind: GS should be reduced below TAS.
-    const flight = makeFlight([makeLeg({ tc: 0, wind: { directionDeg: 0, speedKt: 20 } })], {
-      globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 0 },
+  it('computes MH from TC, WCA and VAR', () => {
+    const flight = makeFlight([makeLeg({ tc: 90, wind: { directionDeg: 180, speedKt: 20 } })], {
+      globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 3 },
     })
     const derived = computeLegDerived(flight)
-    expect(derived[0].gs).toBe(80) // 100 - 20, direct headwind, WCA 0
+    expect(derived[0].mh).toBe(computeMh(90, derived[0].wca, 3))
   })
 
-  it('equals TAS with no wind', () => {
+  it('equals MC with no wind (WCA 0)', () => {
     const flight = makeFlight([makeLeg({ tc: 45 })])
     const derived = computeLegDerived(flight)
-    expect(derived[0].gs).toBe(100) // global TAS
+    expect(derived[0].mh).toBe(derived[0].mc)
   })
 })
 

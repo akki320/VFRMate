@@ -253,6 +253,20 @@ npx vitest run    # Unit-Tests
   manuellen Navigations-/Zeitfelder. `Leg.gs` als Piloten-Eingabefeld
   entfernt, da nun immer abgeleitet; neues `LegDerived.gs`, in der
   Kopfzeile mit "⚙" markiert.
+- **Phase 12 (abgeschlossen):** ETO-Bugfix und finale Aufteilung
+  automatisch/manuell. ETO zeigte bisher die rohe seit ATD/ETD
+  verstrichene Minutenzahl an statt der daraus resultierenden Uhrzeit —
+  bei ATD 15:15 und einem 1-minütigen Leg stand dort "1" statt der
+  erwarteten Minute "16" (von 15:16). Intern rechnet ETO/ATO weiterhin in
+  verstrichenen Minuten seit ATD/ETD (kein UTC-Abgleich nötig), aber die
+  Anzeige zeigt jetzt nur noch die Minute der daraus resultierenden
+  Uhrzeit (neues format.ts::clockMinuteOnly), mit der vollen Uhrzeit als
+  Tooltip — für ATO ebenso, damit ETO/ATO nebeneinander vergleichbar
+  bleiben. GS ist wieder eine reine Piloteneingabe (Rückbau von Phase
+  11), MH dagegen jetzt automatisch berechnet (MH = TC + WCA − VAR,
+  neues `computeMh`). Automatisch berechnet sind damit genau: WCA, MC,
+  MH, Entf. Rest, Zeit Rest, ETO — alle anderen Spalten sind
+  Piloteneingabe.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

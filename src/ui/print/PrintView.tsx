@@ -74,11 +74,11 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
               'TC',
               'WCA ⚙',
               'VAR',
-              'MH',
+              'MH ⚙',
               'MC ⚙',
               'Entf.Abschn.',
               'Entf.Rest ⚙',
-              'GS ⚙',
+              'GS',
               'Zeit Abschn.',
               'Zeit Rest ⚙',
               'ETO ⚙',
@@ -112,18 +112,18 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
                   {legDerived.wca}°
                 </td>
                 <td style={printTdStyle}>{resolved.variationDeg}°</td>
-                <td style={printTdStyle}>{leg.mh !== undefined ? `${String(leg.mh).padStart(3, '0')}°` : '–'}</td>
+                <td style={printTdStyle}>{String(legDerived.mh).padStart(3, '0')}°</td>
                 <td style={printTdStyle}>{String(legDerived.mc).padStart(3, '0')}°</td>
                 <td style={printTdStyle}>{leg.distanceNm}</td>
                 <td style={printTdStyle}>{legDerived.remainingDistanceNm}</td>
-                <td style={printTdStyle}>{legDerived.gs}</td>
+                <td style={printTdStyle}>{leg.gs ?? '–'}</td>
                 <td style={printTdStyle}>{leg.timeMin ?? '–'}</td>
                 <td style={printTdStyle}>{formatHoursMinutes(legDerived.remainingTimeMin)}</td>
                 <td style={printTdStyle}>
-                  {eto.revisedEtoMin}
+                  {formatUtcMinutes(anchorUtcMin + eto.revisedEtoMin)}
                   {eto.deltaMin !== 0 ? ` (${formatDeltaMinutes(eto.deltaMin)})` : ''}
                 </td>
-                <td style={printTdStyle}>{ato ?? ''}</td>
+                <td style={printTdStyle}>{ato !== undefined ? formatUtcMinutes(anchorUtcMin + ato) : ''}</td>
                 <td style={printTdStyle}>{leg.remarks ?? ''}</td>
               </tr>
             )
@@ -132,9 +132,10 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
       </table>
 
       <p style={{ marginTop: '1mm', fontSize: '7px' }}>
-        ETO/ATO/Zeit Rest: Minuten seit ATD{flight.atdUtcMin === undefined ? ' (bzw. ETD, solange keine ATD gesetzt ist)' : ''}
-        {' '}— Anker hier: {formatUtcMinutes(anchorUtcMin)} UTC. ⚙ = automatisch berechnet, alle anderen Spalten
-        Piloteneingabe.
+        ETO/ATO: geschätzte/tatsächliche Uhrzeit (UTC), berechnet aus ATD
+        {flight.atdUtcMin === undefined ? ' (bzw. ETD, solange keine ATD gesetzt ist)' : ''} plus Zeit Abschnitt/Delta
+        — Anker hier: {formatUtcMinutes(anchorUtcMin)} UTC. Zeit Rest: verbleibende Minuten bis zum Ziel. ⚙ = automatisch
+        berechnet, alle anderen Spalten Piloteneingabe.
       </p>
       <p style={{ marginTop: '2mm', fontSize: '7px' }}>
         Die App ist ein Hilfsmittel für die Planung und ersetzt weder die vorgeschriebene

@@ -40,3 +40,15 @@ export function formatHoursMinutes(minutes: number): string {
   const m = abs % 60
   return `${sign}${h}:${String(m).padStart(2, '0')}`
 }
+
+/**
+ * Nur die Minute (00–59) der Uhrzeit `anchorUtcMinutes + elapsedMin` — die
+ * Kurzanzeige für ETO/ATO auf dem Bildschirm: die Stunde ist dem Piloten
+ * aus dem Kontext (ATD/ETD, Uhrzeit) klar, auf dem schmalen Tabellenfeld
+ * zählt nur die Minute. Die volle Uhrzeit steht daneben als Tooltip (siehe
+ * formatUtcMinutes, das denselben Wert unwrapped entgegennimmt).
+ */
+export function clockMinuteOnly(anchorUtcMinutes: number, elapsedMin: number): string {
+  const wrapped = (((anchorUtcMinutes + elapsedMin) % 60) + 60) % 60
+  return String(wrapped).padStart(2, '0')
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatDeltaMinutes, formatHoursMinutes } from '../../domain/format'
+import { clockMinuteOnly, formatDeltaMinutes, formatHoursMinutes, formatUtcMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
 import type { ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
@@ -237,7 +237,7 @@ export function LegTableRow({
           />
         )
       case 'mh':
-        return <NumberCell label="MH" value={leg.mh} onChange={(v) => void updateLeg(leg.id, { mh: v })} />
+        return <ReadOnly>{courseLabel(derived.mh)}</ReadOnly>
       case 'mc':
         return <ReadOnly>{courseLabel(derived.mc)}</ReadOnly>
       case 'distLeg':
@@ -251,15 +251,15 @@ export function LegTableRow({
       case 'distRemain':
         return <ReadOnly>{derived.remainingDistanceNm}</ReadOnly>
       case 'gs':
-        return <ReadOnly>{derived.gs}</ReadOnly>
+        return <NumberCell label="GS" value={leg.gs} onChange={(v) => void updateLeg(leg.id, { gs: v })} />
       case 'timeLeg':
         return <NumberCell label="Zeit Abschnitt" value={leg.timeMin} onChange={(v) => void updateLeg(leg.id, { timeMin: v })} />
       case 'timeRemain':
         return <ReadOnly>{formatHoursMinutes(derived.remainingTimeMin)}</ReadOnly>
       case 'eto':
         return (
-          <ReadOnly>
-            {eto.revisedEtoMin}
+          <ReadOnly title={`ETO ${formatUtcMinutes(anchorUtcMinutes + eto.revisedEtoMin)}`}>
+            {clockMinuteOnly(anchorUtcMinutes, eto.revisedEtoMin)}
             {eto.deltaMin !== 0 && (
               <span
                 className="ml-1 text-xs"
@@ -295,9 +295,9 @@ function signedDegLabel(deg: number): string {
   return `${deg > 0 ? '+' : ''}${deg}°`
 }
 
-function ReadOnly({ children }: { children: React.ReactNode }) {
+function ReadOnly({ children, title }: { children: React.ReactNode; title?: string }) {
   return (
-    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }} title={title}>
       {children}
     </span>
   )
