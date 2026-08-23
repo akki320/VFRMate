@@ -1,10 +1,14 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useFlightStore } from '../../store/flightStore'
 import { COLUMN_IDS, COLUMN_LABELS, COMPUTED_COLUMNS, type ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { LegTableRow } from './LegTableRow'
 import { useRemarksCollapsed } from './useRemarksCollapsed'
 
-const HEADER_HEIGHT_PX = 40
+/** Nur der Startwert vor der ersten Messung (siehe useLayoutEffect unten) —
+ * die Kopfzeile hat inzwischen keine feste Höhe mehr (siehe Kommentar an
+ * der Kopfzeilen-<tr>), daher reicht ein grober Schätzwert. */
+const HEADER_HEIGHT_FALLBACK_PX = 40
 
 interface LegTableProps {
   rows: FlightTableRow[]
@@ -28,13 +32,42 @@ interface LegTableProps {
  * Spaltenbreite in dieser Tabelle als `ch`-Wert gesetzt ist (siehe
  * LegTableRow.tsx), schrumpfen dadurch auf schmalen Bildschirmen alle
  * Spalten gemeinsam mit, statt jede Zelle einzeln pro Bildschirmgröße zu
- * pflegen. `overflow-x-auto` bleibt als Rückfallebene für Bildschirme, auf
- * denen selbst die geschrumpfte Tabelle noch nicht ganz hineinpasst.
+ * pflegen. Das allein reicht aber nicht, wenn die Spaltenbreite von der
+ * (nicht umbrechenden) Spaltenüberschrift vorgegeben wird: eine lange
+ * Überschrift wie "GEPLANTE FLUGHÖHE" erzwingt dann eine Mindestbreite,
+ * die weit über das hinausgeht, was der eigentliche Zellinhalt braucht.
+ * Die Spaltenüberschriften dürfen deshalb umbrechen (kein
+ * `whitespace-nowrap` mehr) — die automatische Tabellenspaltenberechnung
+ * des Browsers bevorzugt Umbruch gegenüber Überlaufen, solange die
+ * Tabelle eine feste Breite hat (hier `w-full`), und schrumpft die Spalte
+ * dadurch auf die Breite des eigentlichen Zellinhalts. `overflow-x-auto`
+ * bleibt als Rückfallebene für Bildschirme, auf denen selbst die
+ * geschrumpfte Tabelle noch nicht ganz hineinpasst.
+ *
+ * Weil die Kopfzeile dadurch zwei- statt einzeilig werden kann, hat sie
+ * keine feste Höhe mehr — die tatsächliche Höhe wird gemessen (Ref +
+ * ResizeObserver) und als Sticky-Offset an die aktive Zeile
+ * weitergereicht. Ein hartkodierter Höhenwert wäre sonst bei
+ * umgebrochener Kopfzeile zu klein, und die aktive Zeile würde beim
+ * Scrollen teilweise unter der (jetzt höheren) Kopfzeile verschwinden.
  */
 export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTableProps) {
   const reorderLegs = useFlightStore((s) => s.reorderLegs)
   const orderedVisible = COLUMN_IDS.filter((id) => visibleColumns.has(id))
   const remarks = useRemarksCollapsed()
+
+  const headerRowRef = useRef<HTMLTableRowElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(HEADER_HEIGHT_FALLBACK_PX)
+
+  useLayoutEffect(() => {
+    const el = headerRowRef.current
+    if (!el) return
+    const measure = () => setHeaderHeight(el.getBoundingClientRect().height)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= rows.length || from === to) return
@@ -57,12 +90,12 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr
+            ref={headerRowRef}
             className="border-b text-left text-[0.65rem] uppercase sm:text-xs"
             style={{
               position: 'sticky',
               top: 0,
               zIndex: 10,
-              height: HEADER_HEIGHT_PX,
               backgroundColor: 'var(--bg)',
               borderColor: 'var(--border-strong)',
               color: 'var(--text-secondary)',
@@ -71,7 +104,7 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
             <th className="px-0.5 py-1.5 font-medium sm:px-1 sm:py-2" />
             <th className="px-1 py-1.5 font-medium sm:px-1.5 sm:py-2">Kontrollpunkt</th>
             {orderedVisible.map((id) => (
-              <th key={id} className="px-1 py-1.5 text-right font-medium whitespace-nowrap sm:px-1.5 sm:py-2">
+              <th key={id} className="px-1 py-1.5 text-right font-medium sm:px-1.5 sm:py-2">
                 {COLUMN_LABELS[id]}
                 {COMPUTED_COLUMNS.has(id) && (
                   <span className="ml-1 normal-case" style={{ color: 'var(--text-muted)' }} title="automatisch berechnet">
@@ -104,7 +137,7 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
               visibleColumns={orderedVisible}
               index={index}
               total={rows.length}
-              headerOffsetPx={HEADER_HEIGHT_PX}
+              headerOffsetPx={headerHeight}
               anchorUtcMinutes={anchorUtcMinutes}
               remarksCollapsed={remarks.collapsed}
               onMoveUp={() => move(index, index - 1)}

@@ -318,6 +318,25 @@ npx vitest run    # Unit-Tests
   zusätzlich end-to-end mit der Originaldatei des Nutzers per
   Playwright verifiziert — Flug mit 14 Legs, LFZ-Muster/-Kennzeichen
   und den beiden erfassten ATOs öffnet und rechnet jetzt korrekt.
+- **Phase 16 (abgeschlossen):** Spaltenbreite weiter verkleinert — der
+  eigentliche Engpass war nicht (mehr) die Schriftgröße (Phase 14),
+  sondern `whitespace-nowrap` auf den Spaltenüberschriften: eine lange
+  Überschrift wie "GEPLANTE FLUGHÖHE" erzwang eine Mindestbreite weit
+  über das, was der Zellinhalt selbst braucht. Die Überschriften dürfen
+  jetzt umbrechen — die automatische Tabellenspaltenberechnung des
+  Browsers bevorzugt Umbruch gegenüber Überlaufen, solange die Tabelle
+  eine feste Breite hat (`w-full`), und schrumpft die Spalte dadurch auf
+  die Breite des tatsächlichen Zellinhalts. Per Playwright bei 375px
+  verifiziert: Scrollbreite sank weiter von 1290px (Phase 14) auf
+  1033px (zusammen ≈32 % unter dem Ursprungswert vor Phase 14); auf
+  1900px passt die Tabelle jetzt sogar ganz ohne horizontales Scrollen.
+  Weil die Kopfzeile dadurch zwei- statt einzeilig werden kann, hat sie
+  keine feste Höhe mehr — die tatsächliche Höhe wird per ResizeObserver
+  gemessen und als Sticky-Offset an die aktive Zeile weitergereicht
+  (ein hartkodierter Wert hätte sonst bei umgebrochener Kopfzeile zu
+  klein sein und die aktive Zeile teilweise darunter verschwinden
+  lassen); per Playwright exakt 0px Abstand zwischen Kopfzeile und
+  aktiver Zeile nach dem Umbruch bestätigt.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.
