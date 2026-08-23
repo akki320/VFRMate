@@ -5,7 +5,15 @@ import type { ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { AtoCell } from './AtoCell'
 
-const inputClass = 'mono-num w-full min-w-0 rounded border px-1.5 py-1 text-sm'
+// Schrift und Innenabstand sind bewusst responsiv (kleiner unterhalb von
+// "sm", normal darüber) statt fest: praktisch jede Spaltenbreite in dieser
+// Tabelle ist als `ch`-Wert gesetzt (siehe minWidth/width unten), und `ch`
+// bemisst sich am Font-Size des jeweiligen Elements — dieselbe Zahl in
+// `ch` ergibt bei kleinerer Schrift automatisch weniger Pixel. Dadurch
+// schrumpfen alle Spalten auf schmalen Bildschirmen gemeinsam mit, ohne
+// dass jede einzelne Breite separat für jede Bildschirmgröße gepflegt
+// werden müsste.
+const inputClass = 'mono-num w-full min-w-0 rounded border px-1 py-0.5 text-xs sm:px-1.5 sm:py-1 sm:text-sm'
 const inputStyle = { borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }
 
 /** Wandelt einen Entwurfstext in eine Zahl um — akzeptiert sowohl "1.6"
@@ -178,7 +186,7 @@ export function LegTableRow({
 
   return (
     <tr className="transition-state border-b" style={{ ...rowStyle, borderColor: 'var(--border)' }}>
-      <td className="px-1 py-1.5 align-middle">
+      <td className="px-0.5 py-1 align-middle sm:px-1 sm:py-1.5">
         <div className="flex items-center gap-0.5">
           <div className="flex flex-col gap-0.5">
             <button
@@ -216,7 +224,7 @@ export function LegTableRow({
         </div>
       </td>
 
-      <td className="px-1.5 py-1.5 align-middle">
+      <td className="px-1 py-1 align-middle sm:px-1.5 sm:py-1.5">
         <TextCell
           label="Kontrollpunkt"
           value={leg.waypoint}
@@ -228,16 +236,16 @@ export function LegTableRow({
       </td>
 
       {visibleColumns.map((id) => (
-        <td key={id} className="px-1.5 py-1.5 align-middle text-right">
+        <td key={id} className="px-1 py-1 align-middle text-right sm:px-1.5 sm:py-1.5">
           {renderCell(id)}
         </td>
       ))}
 
-      <td className="px-1.5 py-1.5 align-middle text-right">
+      <td className="px-1 py-1 align-middle text-right sm:px-1.5 sm:py-1.5">
         <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} anchorUtcMinutes={anchorUtcMinutes} />
       </td>
 
-      <td className="px-1.5 py-1.5 align-middle">
+      <td className="px-1 py-1 align-middle sm:px-1.5 sm:py-1.5">
         <TextCell
           label="Bemerkungen"
           value={leg.remarks ?? ''}
@@ -350,7 +358,7 @@ function signedDegLabel(deg: number): string {
 
 function ReadOnly({ children, title }: { children: React.ReactNode; title?: string }) {
   return (
-    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }} title={title}>
+    <span className="mono-num text-xs whitespace-nowrap sm:text-sm" style={{ color: 'var(--text-primary)' }} title={title}>
       {children}
     </span>
   )

@@ -283,6 +283,20 @@ npx vitest run    # Unit-Tests
   TextCell-Komponente (analog zu NumberCell aus Phase 9) committet
   jetzt nur noch einmal beim Verlassen des Felds statt bei jedem
   Zeichen — schnelles Tippen verifiziert fehlerfrei.
+- **Phase 14 (abgeschlossen):** Spaltenbreiten reagieren jetzt responsiv
+  statt fest. Praktisch jede Spaltenbreite in der Tabelle ist als
+  `ch`-Wert gesetzt, und `ch` bemisst sich am Font-Size des jeweiligen
+  Elements — Schrift und Innenabstand von Kopf- und Datenzellen sind
+  deshalb unterhalb des "sm"-Breakpoints (640px) kleiner als darüber,
+  wodurch alle Spalten auf schmalen Bildschirmen automatisch gemeinsam
+  mitschrumpfen, ohne jede Breite einzeln für jede Bildschirmgröße zu
+  pflegen. Verifiziert per Playwright bei 375px Viewport-Breite: die
+  gesamte Scrollbreite der Tabelle sank dadurch von 1518px auf 1290px
+  (≈15 %), auf breiten Bildschirmen bleibt die Darstellung unverändert
+  (`sm:`-Klassen stellen dort die volle Größe wieder her). Reine
+  Touch-Zielgrößen (Überflug-Taster, ATO-Korrektur) blieben unverändert
+  auf ihrer Mindesthöhe/-breite, da das eine Bedienbarkeits- keine
+  Platzfrage ist.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

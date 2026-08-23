@@ -84,7 +84,7 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
         onPointerUp={cancelLongPress}
         onPointerLeave={cancelLongPress}
         onPointerCancel={cancelLongPress}
-        className="mono-num rounded px-2 text-base"
+        className="mono-num rounded px-1 text-sm sm:px-2 sm:text-base"
         style={{ color: 'var(--text-primary)', minHeight: 44 }}
         title={`ATO ${formatUtcMinutes(anchorUtcMinutes + ato)}`}
         aria-label={`ATO ${ato} min, gedrückt halten zum Korrigieren`}

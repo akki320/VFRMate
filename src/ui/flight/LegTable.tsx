@@ -22,6 +22,14 @@ interface LegTableProps {
  * per Default, siehe useRemarksCollapsed.ts) statt der allgemeinen
  * Spaltenauswahl. Kopfzeile und die aktive Zeile (nächster anzufliegender
  * Punkt) bleiben beim Scrollen oben fixiert.
+ *
+ * Schrift und Innenabstand von Kopf- und Datenzellen sind responsiv
+ * (kleiner unterhalb des "sm"-Breakpoints) statt fest — da praktisch jede
+ * Spaltenbreite in dieser Tabelle als `ch`-Wert gesetzt ist (siehe
+ * LegTableRow.tsx), schrumpfen dadurch auf schmalen Bildschirmen alle
+ * Spalten gemeinsam mit, statt jede Zelle einzeln pro Bildschirmgröße zu
+ * pflegen. `overflow-x-auto` bleibt als Rückfallebene für Bildschirme, auf
+ * denen selbst die geschrumpfte Tabelle noch nicht ganz hineinpasst.
  */
 export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTableProps) {
   const reorderLegs = useFlightStore((s) => s.reorderLegs)
@@ -49,7 +57,7 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr
-            className="border-b text-left text-xs uppercase"
+            className="border-b text-left text-[0.65rem] uppercase sm:text-xs"
             style={{
               position: 'sticky',
               top: 0,
@@ -60,10 +68,10 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
               color: 'var(--text-secondary)',
             }}
           >
-            <th className="px-1 py-2 font-medium" />
-            <th className="px-1.5 py-2 font-medium">Kontrollpunkt</th>
+            <th className="px-0.5 py-1.5 font-medium sm:px-1 sm:py-2" />
+            <th className="px-1 py-1.5 font-medium sm:px-1.5 sm:py-2">Kontrollpunkt</th>
             {orderedVisible.map((id) => (
-              <th key={id} className="px-1.5 py-2 text-right font-medium whitespace-nowrap">
+              <th key={id} className="px-1 py-1.5 text-right font-medium whitespace-nowrap sm:px-1.5 sm:py-2">
                 {COLUMN_LABELS[id]}
                 {COMPUTED_COLUMNS.has(id) && (
                   <span className="ml-1 normal-case" style={{ color: 'var(--text-muted)' }} title="automatisch berechnet">
@@ -72,8 +80,8 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTablePro
                 )}
               </th>
             ))}
-            <th className="px-1.5 py-2 text-right font-medium">ATO</th>
-            <th className="px-1.5 py-2 font-medium whitespace-nowrap">
+            <th className="px-1 py-1.5 text-right font-medium sm:px-1.5 sm:py-2">ATO</th>
+            <th className="px-1 py-1.5 font-medium whitespace-nowrap sm:px-1.5 sm:py-2">
               <button
                 type="button"
                 onClick={remarks.toggle}
