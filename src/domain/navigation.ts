@@ -177,7 +177,7 @@ export function computeFlightLegs(flight: Flight): ComputedLeg[] {
  * dazu.
  */
 export function reEstimateLegs(flight: Flight, computedLegs: ComputedLeg[]): ReEstimatedLeg[] {
-  const legActualsById = new Map(flight.legActuals.map((a) => [a.legId, a.atoUtcMin]))
+  const legActualsById = new Map(flight.legActuals.map((a) => [a.legId, a.atoMin]))
 
   let lastKnownTimeUtcMin: UtcMinutes = flight.atdUtcMin ?? flight.etdUtcMin
   let carriedDeltaMin = 0

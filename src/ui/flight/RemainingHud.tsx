@@ -2,7 +2,9 @@ import { useUtcClock, formatUtcClock } from '../hooks/useUtcClock'
 
 interface RemainingHudProps {
   remainingTimeMin: number
-  remainingDistanceNm: number
+  /** Entf. Rest der aktiven Zeile — eine Piloteneingabe, kein berechneter
+   * Wert (siehe Leg.distanceRemainNm); "–" solange nicht ausgefüllt. */
+  remainingDistanceNm: number | undefined
   flightComplete: boolean
 }
 
@@ -26,8 +28,8 @@ export function RemainingHud({ remainingTimeMin, remainingDistanceNm, flightComp
       />
       <HudStat
         label="Rest"
-        value={flightComplete ? '–' : remainingDistanceNm.toFixed(1)}
-        unit={flightComplete ? undefined : 'NM'}
+        value={!flightComplete && remainingDistanceNm !== undefined ? remainingDistanceNm.toFixed(1) : '–'}
+        unit={!flightComplete && remainingDistanceNm !== undefined ? 'NM' : undefined}
       />
     </div>
   )

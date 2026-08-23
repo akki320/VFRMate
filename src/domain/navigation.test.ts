@@ -173,7 +173,7 @@ describe('reEstimateLegs', () => {
     const flight = makeFlight(legs, {
       etdUtcMin: 8 * 60,
       atdUtcMin: 8 * 60,
-      legActuals: [{ legId: 'leg-1', atoUtcMin: 8 * 60 + 33 }], // 3 min late
+      legActuals: [{ legId: 'leg-1', atoMin: 8 * 60 + 33 }], // 3 min late
     })
     const computed = computeFlightLegs(flight)
     const reEstimated = reEstimateLegs(flight, computed)
@@ -200,8 +200,8 @@ describe('reEstimateLegs', () => {
       etdUtcMin: 8 * 60,
       atdUtcMin: 8 * 60,
       legActuals: [
-        { legId: 'leg-1', atoUtcMin: 8 * 60 + 33 }, // +3
-        { legId: 'leg-2', atoUtcMin: 8 * 60 + 33 + 25 }, // this leg flown in 25 min → -2 vs planned 09:00
+        { legId: 'leg-1', atoMin: 8 * 60 + 33 }, // +3
+        { legId: 'leg-2', atoMin: 8 * 60 + 33 + 25 }, // this leg flown in 25 min → -2 vs planned 09:00
       ],
     })
     const computed = computeFlightLegs(flight)

@@ -36,7 +36,7 @@ interface FlightStoreState {
   removeLeg: (legId: string) => Promise<void>
   reorderLegs: (orderedLegIds: string[]) => Promise<void>
 
-  recordAto: (legId: string, atoUtcMin: number) => Promise<void>
+  recordAto: (legId: string, atoMin: number) => Promise<void>
   clearAto: (legId: string) => Promise<void>
   /** Setzt den Flugfortschritt zurück: löscht alle ATOs und die ATD, ohne
    * Legs/Planung anzurühren — die ETOs fallen dadurch wieder auf ihre
@@ -141,10 +141,10 @@ export const useFlightStore = create<FlightStoreState>((set, get) => ({
     })
   },
 
-  recordAto: async (legId, atoUtcMin) => {
+  recordAto: async (legId, atoMin) => {
     await get().patchCurrentFlight((flight) => ({
       ...flight,
-      legActuals: [...flight.legActuals.filter((a) => a.legId !== legId), { legId, atoUtcMin }],
+      legActuals: [...flight.legActuals.filter((a) => a.legId !== legId), { legId, atoMin }],
     }))
   },
 

@@ -1,4 +1,4 @@
-import { formatDeltaMinutes, formatMinutesOnly, formatUtcMinutes } from '../../domain/format'
+import { formatDeltaMinutes, formatHoursMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
 import type { ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
@@ -13,14 +13,24 @@ interface LegTableRowProps {
   index: number
   total: number
   headerOffsetPx: number
+  anchorUtcMinutes: number
   onMoveUp: () => void
   onMoveDown: () => void
 }
 
-export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx, onMoveUp, onMoveDown }: LegTableRowProps) {
+export function LegTableRow({
+  row,
+  visibleColumns,
+  index,
+  total,
+  headerOffsetPx,
+  anchorUtcMinutes,
+  onMoveUp,
+  onMoveDown,
+}: LegTableRowProps) {
   const updateLeg = useFlightStore((s) => s.updateLeg)
   const removeLeg = useFlightStore((s) => s.removeLeg)
-  const { leg, computed, reEstimated, resolved } = row
+  const { leg, resolved, derived, eto } = row
 
   const rowStyle: React.CSSProperties = row.isActive
     ? {
@@ -90,24 +100,29 @@ export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx,
       ))}
 
       <td className="px-1.5 py-1.5 align-middle text-right">
-        <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} anchorUtcMinutes={computed.etoUtcMin} />
+        <AtoCell legId={leg.id} ato={row.ato} isActive={row.isActive} anchorUtcMinutes={anchorUtcMinutes} />
       </td>
     </tr>
   )
 
+  function numberCell(label: string, value: number | undefined, onChange: (v: number | undefined) => void, step?: number) {
+    return (
+      <input
+        type="number"
+        step={step}
+        aria-label={label}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+        className={inputClass}
+        style={{ ...inputStyle, minWidth: '5ch' }}
+      />
+    )
+  }
+
   function renderCell(id: ColumnId): React.ReactNode {
     switch (id) {
       case 'safetyAlt':
-        return (
-          <input
-            type="number"
-            aria-label="Sicherheitshöhe"
-            value={leg.safetyAltitudeFt ?? ''}
-            onChange={(e) => void updateLeg(leg.id, { safetyAltitudeFt: e.target.value === '' ? undefined : Number(e.target.value) })}
-            className={inputClass}
-            style={{ ...inputStyle, minWidth: '6ch' }}
-          />
-        )
+        return numberCell('Sicherheitshöhe', leg.safetyAltitudeFt, (v) => void updateLeg(leg.id, { safetyAltitudeFt: v }))
       case 'plannedAlt':
         return (
           <input
@@ -120,16 +135,7 @@ export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx,
           />
         )
       case 'tas':
-        return (
-          <input
-            type="number"
-            aria-label="TAS"
-            value={resolved.tasKt}
-            onChange={(e) => void updateLeg(leg.id, { tasKt: Number(e.target.value) })}
-            className={inputClass}
-            style={{ ...inputStyle, minWidth: '5ch' }}
-          />
-        )
+        return numberCell('TAS', resolved.tasKt, (v) => void updateLeg(leg.id, { tasKt: v }))
       case 'wind':
         return (
           <div className="flex items-center justify-end gap-1">
@@ -155,65 +161,35 @@ export function LegTableRow({ row, visibleColumns, index, total, headerOffsetPx,
           </div>
         )
       case 'tc':
-        return (
-          <input
-            type="number"
-            aria-label="TC"
-            value={leg.tc}
-            onChange={(e) => void updateLeg(leg.id, { tc: Number(e.target.value) })}
-            className={inputClass}
-            style={{ ...inputStyle, minWidth: '5ch' }}
-          />
-        )
+        return numberCell('TC', leg.tc, (v) => void updateLeg(leg.id, { tc: v ?? 0 }))
       case 'wca':
-        return <ReadOnly>{`${computed.wca >= 0 ? '+' : ''}${computed.wca}°`}</ReadOnly>
+        return numberCell('WCA', leg.wca, (v) => void updateLeg(leg.id, { wca: v }))
       case 'var':
-        return (
-          <input
-            type="number"
-            aria-label="Missweisung"
-            value={resolved.variationDeg}
-            onChange={(e) => void updateLeg(leg.id, { variationDeg: Number(e.target.value) })}
-            className={inputClass}
-            style={{ ...inputStyle, minWidth: '4ch' }}
-          />
-        )
+        return numberCell('Missweisung', resolved.variationDeg, (v) => void updateLeg(leg.id, { variationDeg: v }))
       case 'mh':
-        return <ReadOnly>{courseLabel(computed.mh)}</ReadOnly>
+        return numberCell('MH', leg.mh, (v) => void updateLeg(leg.id, { mh: v }))
       case 'mc':
-        return <ReadOnly>{courseLabel(computed.mc)}</ReadOnly>
+        return <ReadOnly>{courseLabel(derived.mc)}</ReadOnly>
       case 'distLeg':
-        return (
-          <input
-            type="number"
-            step={0.1}
-            aria-label="Distanz Abschnitt"
-            value={leg.distanceNm}
-            onChange={(e) => void updateLeg(leg.id, { distanceNm: Number(e.target.value) })}
-            className={inputClass}
-            style={{ ...inputStyle, minWidth: '5ch' }}
-          />
-        )
+        return numberCell('Distanz Abschnitt', leg.distanceNm, (v) => void updateLeg(leg.id, { distanceNm: v ?? 0 }), 0.1)
       case 'distRemain':
-        return <ReadOnly>{computed.remainingDistanceNm.toFixed(1)}</ReadOnly>
+        return numberCell('Distanz Rest', leg.distanceRemainNm, (v) => void updateLeg(leg.id, { distanceRemainNm: v }), 0.1)
       case 'gs':
-        return <ReadOnly>{computed.gs}</ReadOnly>
+        return numberCell('GS', leg.gs, (v) => void updateLeg(leg.id, { gs: v }))
       case 'timeLeg':
-        return <ReadOnly>{computed.legTimeMin}</ReadOnly>
-      case 'timeAccum':
-        return <ReadOnly>{computed.cumulativeTimeMin}</ReadOnly>
+        return numberCell('Zeit Abschnitt', leg.timeMin, (v) => void updateLeg(leg.id, { timeMin: v }))
       case 'timeRemain':
-        return <ReadOnly>{computed.remainingTimeMin}</ReadOnly>
+        return <ReadOnly>{formatHoursMinutes(derived.remainingTimeMin)}</ReadOnly>
       case 'eto':
         return (
-          <ReadOnly title={formatUtcMinutes(computed.etoUtcMin)}>
-            {formatMinutesOnly(computed.etoUtcMin)}
-            {reEstimated.deltaMin !== 0 && (
+          <ReadOnly>
+            {eto.revisedEtoMin}
+            {eto.deltaMin !== 0 && (
               <span
                 className="ml-1 text-xs"
-                style={{ color: reEstimated.deltaMin > 0 ? 'var(--signal-delta-late)' : 'var(--signal-delta-early)' }}
+                style={{ color: eto.deltaMin > 0 ? 'var(--signal-delta-late)' : 'var(--signal-delta-early)' }}
               >
-                {formatDeltaMinutes(reEstimated.deltaMin)}
+                {formatDeltaMinutes(eto.deltaMin)}
               </span>
             )}
           </ReadOnly>
@@ -237,9 +213,9 @@ function courseLabel(deg: number): string {
   return `${String(deg).padStart(3, '0')}°`
 }
 
-function ReadOnly({ children, title }: { children: React.ReactNode; title?: string }) {
+function ReadOnly({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }} title={title}>
+    <span className="mono-num whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
       {children}
     </span>
   )

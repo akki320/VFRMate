@@ -116,10 +116,10 @@ describe('flight persistence', () => {
   })
 
   it('persists an added ATO so it survives a fresh read (crash/reload safety)', async () => {
-    const flight = makeFlight({ legActuals: [{ legId: 'leg-1', atoUtcMin: 510 }] })
+    const flight = makeFlight({ legActuals: [{ legId: 'leg-1', atoMin: 510 }] })
     await putFlight(flight)
 
     const reloaded = await getFlight(flight.id)
-    expect(reloaded?.legActuals).toEqual([{ legId: 'leg-1', atoUtcMin: 510 }])
+    expect(reloaded?.legActuals).toEqual([{ legId: 'leg-1', atoMin: 510 }])
   })
 })

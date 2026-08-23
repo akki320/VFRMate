@@ -147,10 +147,19 @@ export interface Wind {
   speedKt: number
 }
 
-/** Ein Abschnitt (Leg) zwischen zwei Kontrollpunkten. Nur die geplanten
- * Eingabewerte werden gespeichert — abgeleitete Werte (WCA, MH, GS, ...)
- * werden nie persistiert, sondern immer aus diesen Feldern neu berechnet
- * (siehe navigation.ts::computeLeg). */
+/**
+ * Ein Abschnitt (Leg) zwischen zwei Kontrollpunkten.
+ *
+ * Auf Wunsch des Nutzers sind fast alle Felder direkte Eingabewerte, wie
+ * auf dem Papierformular per Hand ausgefüllt — nur MC (aus TC und VAR),
+ * Gesamtstrecke/Gesamtzeit (Summen über alle Legs) und ETO/Zeit Rest
+ * (aus den Zeit-Abschnitt-Werten fortgeschrieben) werden automatisch
+ * berechnet (siehe domain/flightPlan.ts). WCA, MH und GS insbesondere
+ * sind bewusst reine Eingabefelder — die App rechnet das Winddreieck
+ * nicht mehr automatisch, das bleibt dem Piloten (E6B) überlassen; die
+ * dafür nötige Rechenlogik (windTriangle/courseChain in navigation.ts)
+ * bleibt im Code erhalten, ist aber nicht mehr an die UI angebunden.
+ */
 export interface Leg {
   id: string
   /** Kontrollpunkt-Name (Ziel dieses Abschnitts), z.B. "EDXY" oder "Kirchturm Musterdorf". */
@@ -163,8 +172,21 @@ export interface Leg {
   plannedAltitude: string
   /** Rechtweisender Kurs (True Course) in °, 0–359. */
   tc: number
+  /** Windversetzungswinkel in °, vom Piloten eingetragen (kein
+   * Winddreieck-Automatismus mehr). */
+  wca?: number
+  /** Missweisender Steuerkurs (MH/mwSK) in °, vom Piloten eingetragen. */
+  mh?: number
   /** Distanz zum vorherigen Kontrollpunkt in NM. */
   distanceNm: number
+  /** Restdistanz zum Zielflugplatz ab diesem Kontrollpunkt in NM, vom
+   * Piloten eingetragen. */
+  distanceRemainNm?: number
+  /** Groundspeed (GS/VG) in kt, vom Piloten eingetragen. */
+  gs?: number
+  /** Flugzeit dieses Abschnitts (Zeit Abschnitt) in Minuten, vom Piloten
+   * eingetragen — Basis für Gesamtzeit, Zeit Rest und die ETO-Kette. */
+  timeMin?: number
   /**
    * True Airspeed in kt für diesen Abschnitt — überschreibt
    * Flight.globalDefaults.tasKt. `undefined` bedeutet: globalen Wert
@@ -176,7 +198,8 @@ export interface Leg {
   wind?: Wind
   /** Missweisung (Variation) in °, positiv = östliche Missweisung —
    * überschreibt Flight.globalDefaults.variationDeg. `undefined` bedeutet:
-   * globalen Wert übernehmen. */
+   * globalen Wert übernehmen. Einzige Grundlage der automatischen
+   * MC-Berechnung (MC = TC − VAR). */
   variationDeg?: number
   remarks?: string
 }
@@ -202,11 +225,20 @@ export interface ResolvedLegValues {
   variationDegIsOverridden: boolean
 }
 
-/** Tatsächliche Überflugzeit (ATO) für einen Kontrollpunkt, per Leg-ID. */
+/**
+ * Tatsächliche Überflugzeit (ATO) für einen Kontrollpunkt, per Leg-ID.
+ *
+ * `atoMin` sind verstrichene Minuten seit ATD (bzw. ETD, falls noch keine
+ * ATD gesetzt ist) — keine UTC-Uhrzeit. Damit ist kein Abgleich mit der
+ * Wanduhr nötig: ETO und ATO leben in derselben Einheit (Minuten seit
+ * Abflug) und lassen sich direkt vergleichen, auch über Stundengrenzen
+ * hinweg. Beim Antippen von "Überflug" wird `atoMin` einmalig aus der
+ * aktuellen Uhrzeit abgeleitet (siehe ui/flight/AtoCell.tsx), eine
+ * manuelle Korrektur ist danach eine einfache Minutenzahl.
+ */
 export interface LegActual {
   legId: string
-  /** ATO in UTC-Minuten seit Mitternacht. */
-  atoUtcMin: UtcMinutes
+  atoMin: number
 }
 
 /** Abgeleitete (nie gespeicherte) Werte für ein Leg, aus computeLeg(). */

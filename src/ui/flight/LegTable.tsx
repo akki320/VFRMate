@@ -1,5 +1,5 @@
 import { useFlightStore } from '../../store/flightStore'
-import { COLUMN_IDS, COLUMN_LABELS, type ColumnId } from './columns'
+import { COLUMN_IDS, COLUMN_LABELS, COMPUTED_COLUMNS, type ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { LegTableRow } from './LegTableRow'
 
@@ -8,6 +8,8 @@ const HEADER_HEIGHT_PX = 40
 interface LegTableProps {
   rows: FlightTableRow[]
   visibleColumns: Set<ColumnId>
+  /** Minuten seit ATD (bzw. ETD ohne ATD) — Anker für den "Überflug"-Tap. */
+  anchorUtcMinutes: number
 }
 
 /**
@@ -17,7 +19,7 @@ interface LegTableProps {
  * und die aktive Zeile (nächster anzufliegender Punkt) bleiben beim
  * Scrollen oben fixiert.
  */
-export function LegTable({ rows, visibleColumns }: LegTableProps) {
+export function LegTable({ rows, visibleColumns, anchorUtcMinutes }: LegTableProps) {
   const reorderLegs = useFlightStore((s) => s.reorderLegs)
   const orderedVisible = COLUMN_IDS.filter((id) => visibleColumns.has(id))
 
@@ -58,6 +60,11 @@ export function LegTable({ rows, visibleColumns }: LegTableProps) {
             {orderedVisible.map((id) => (
               <th key={id} className="px-1.5 py-2 text-right font-medium whitespace-nowrap">
                 {COLUMN_LABELS[id]}
+                {COMPUTED_COLUMNS.has(id) && (
+                  <span className="ml-1 normal-case" style={{ color: 'var(--text-muted)' }} title="automatisch berechnet">
+                    ⚙
+                  </span>
+                )}
               </th>
             ))}
             <th className="px-1.5 py-2 text-right font-medium">ATO</th>
@@ -72,6 +79,7 @@ export function LegTable({ rows, visibleColumns }: LegTableProps) {
               index={index}
               total={rows.length}
               headerOffsetPx={HEADER_HEIGHT_PX}
+              anchorUtcMinutes={anchorUtcMinutes}
               onMoveUp={() => move(index, index - 1)}
               onMoveDown={() => move(index, index + 1)}
             />

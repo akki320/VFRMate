@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { formatMinutesOnly, formatUtcMinutes, parseMinutesOrTime } from '../../domain/format'
 import { currentUtcMinutes } from '../hooks/useUtcClock'
 import { useFlightStore } from '../../store/flightStore'
 
@@ -9,22 +8,22 @@ interface AtoCellProps {
   legId: string
   ato: number | undefined
   isActive: boolean
-  /** Geplante ETO dieses Legs — Anker, um eine per Hand eingegebene reine
-   * Minutenzahl ("21") auf die richtige Stunde aufzulösen. */
+  /** ATD (bzw. ETD, falls noch keine ATD gesetzt ist) in UTC-Minuten seit
+   * Mitternacht — der einzige Punkt, an dem die reale Uhrzeit ins Spiel
+   * kommt: beim Tippen auf "Überflug" wird daraus die seit Abflug
+   * verstrichene Minutenzahl abgeleitet. Alles danach (ETO, ATO, Delta)
+   * rechnet nur noch mit dieser Minutenzahl, kein UTC-Abgleich mehr. */
   anchorUtcMinutes: number
 }
 
 /**
- * ATO-Erfassung: ein Tap auf "Überflug" trägt die aktuelle UTC-Zeit ein
- * und schaltet zur nächsten Zeile weiter (die folgenden ETOs werden dabei
- * automatisch neu geschätzt, siehe useFlightTableViewModel). Ein bereits
- * erfasstes ATO lässt sich per Long-Press manuell korrigieren — ein
- * einfacher Tap tut dort bewusst nichts, damit man es nicht aus Versehen
- * verstellt.
- *
- * Angezeigt und eingegeben wird nur die Minute (z.B. "21" für 08:21) —
- * die übliche Kurzschreibweise, wenn die Stunde aus dem Zusammenhang klar
- * ist. Eine volle "HH:MM"-Eingabe funktioniert bei Bedarf weiterhin.
+ * ATO-Erfassung: ein Tap auf "Überflug" trägt die seit Abflug
+ * verstrichenen Minuten ein und schaltet zur nächsten Zeile weiter (die
+ * ETOs aller folgenden Legs werden dabei automatisch neu geschätzt,
+ * siehe domain/flightPlan.ts::reEstimateEto). Ein bereits erfasstes ATO
+ * lässt sich per Long-Press manuell korrigieren — einfach als Minutenzahl,
+ * ohne Bezug zu einer Uhrzeit. Ein einfacher Tap tut dort bewusst nichts,
+ * damit man es nicht aus Versehen verstellt.
  */
 export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps) {
   const recordAto = useFlightStore((s) => s.recordAto)
@@ -34,7 +33,7 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
 
   const startLongPress = () => {
     timerRef.current = window.setTimeout(() => {
-      setDraft(ato !== undefined ? formatMinutesOnly(ato) : '')
+      setDraft(ato !== undefined ? String(ato) : '')
       setEditing(true)
     }, LONG_PRESS_MS)
   }
@@ -46,16 +45,17 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
   }
 
   const commitEdit = () => {
-    const parsed = parseMinutesOrTime(draft, ato ?? anchorUtcMinutes)
-    if (!Number.isNaN(parsed)) void recordAto(legId, parsed)
+    const parsed = Number(draft.trim())
+    if (draft.trim() !== '' && Number.isFinite(parsed) && parsed >= 0) void recordAto(legId, Math.round(parsed))
     setEditing(false)
   }
 
   if (editing) {
     return (
       <input
-        type="text"
+        type="number"
         inputMode="numeric"
+        min={0}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
@@ -63,8 +63,8 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
           if (e.key === 'Escape') setEditing(false)
         }}
         onBlur={commitEdit}
-        placeholder="MM"
-        aria-label="ATO korrigieren (Minute, z.B. 21, oder HH:MM)"
+        placeholder="min"
+        aria-label="ATO korrigieren (Minuten seit Abflug)"
         className="mono-num w-14 rounded border px-2 py-1 text-base"
         style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
         // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -83,10 +83,9 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
         onPointerCancel={cancelLongPress}
         className="mono-num rounded px-2 text-base"
         style={{ color: 'var(--text-primary)', minHeight: 44 }}
-        title={formatUtcMinutes(ato)}
-        aria-label={`ATO ${formatUtcMinutes(ato)}, gedrückt halten zum Korrigieren`}
+        aria-label={`ATO ${ato} min, gedrückt halten zum Korrigieren`}
       >
-        {formatMinutesOnly(ato)}
+        {ato}
       </button>
     )
   }
@@ -95,7 +94,16 @@ export function AtoCell({ legId, ato, isActive, anchorUtcMinutes }: AtoCellProps
     return (
       <button
         type="button"
-        onClick={() => void recordAto(legId, currentUtcMinutes())}
+        onClick={() => {
+          // Bewusst kein % 1440-Abgleich mehr (siehe Kommentar oben an der
+          // Komponente): das war Modulo-Arithmetik für UTC-Uhrzeiten und
+          // erzeugt hier Unsinn, sobald "jetzt" noch vor dem Anker liegt
+          // (z. B. ATD noch nicht gesetzt und ETD liegt in der Zukunft) —
+          // dann kippt eine kleine negative Differenz auf ~1440 um.
+          // Reine Minutendifferenz, nach unten auf 0 begrenzt.
+          const elapsed = Math.max(0, currentUtcMinutes() - anchorUtcMinutes)
+          void recordAto(legId, elapsed)
+        }}
         className="transition-state mono-num w-full rounded-lg px-1 text-sm font-semibold sm:text-base"
         style={{ minHeight: 56, minWidth: 56, backgroundColor: 'var(--signal-active-border)', color: '#05070b' }}
       >

@@ -214,6 +214,17 @@ npx vitest run    # Unit-Tests
   Summenwert oberhalb statt als Spalte, ETO/ATO immer nebeneinander,
   ETO/ATO nur als Minute mit Anker-basierter Stundenauflösung bei der
   Long-Press-Korrektur.
+- **Phase 8 (abgeschlossen):** Weitere Vereinfachung — "Zeit Gesamt" zog
+  ebenfalls als Summenwert über die Tabelle ("Gesamtstrecke (P14)" /
+  "Gesamtzeit (P18)", nach den Feldnummern des Papierformulars benannt).
+  WCA, MH, GS, Zeit Abschnitt und Entf. Rest sind jetzt reine
+  Piloteneingaben statt automatisch berechneter Winddreieck-Werte;
+  automatisch bleiben nur MC (aus TC/MW), Gesamtstrecke, Gesamtzeit und
+  Zeit Rest (in Std:Min) — in der Kopfzeile markiert mit "⚙". ETO/ATO
+  sind jetzt reine seit ATD (bzw. ETD) verstrichene Minutenwerte ganz
+  ohne UTC-Abgleich; die alte Stundenauflösungs-Logik aus Phase 7 entfiel
+  komplett, da sie für Uhrzeiten gedacht war und für reine
+  Minutendifferenzen nicht mehr gebraucht wird.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

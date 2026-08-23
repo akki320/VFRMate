@@ -35,12 +35,12 @@ describe('useFlightStore', () => {
     const imported = await useFlightStore.getState().importFlight({
       ...makeFlightInput(),
       legs: [{ id: 'leg-1', waypoint: 'EDXY', plannedAltitude: '2500 ft', tc: 90, distanceNm: 30 }],
-      legActuals: [{ legId: 'leg-1', atoUtcMin: 500 }],
+      legActuals: [{ legId: 'leg-1', atoMin: 500 }],
     })
 
     expect(imported.id).toBeTruthy()
     expect(imported.legs).toHaveLength(1)
-    expect(imported.legActuals).toEqual([{ legId: 'leg-1', atoUtcMin: 500 }])
+    expect(imported.legActuals).toEqual([{ legId: 'leg-1', atoMin: 500 }])
     expect(useFlightStore.getState().flights).toEqual([imported])
     expect(useFlightStore.getState().currentFlight).toBeUndefined()
     expect(await getFlight(imported.id)).toEqual(imported)
@@ -121,7 +121,7 @@ describe('useFlightStore', () => {
     await useFlightStore.getState().recordAto(legId, 495)
 
     const persisted = await getFlight(useFlightStore.getState().currentFlight!.id)
-    expect(persisted?.legActuals).toEqual([{ legId, atoUtcMin: 495 }])
+    expect(persisted?.legActuals).toEqual([{ legId, atoMin: 495 }])
   })
 
   it('recordAto overwrites a previous ATO for the same leg instead of duplicating it', async () => {
@@ -132,7 +132,7 @@ describe('useFlightStore', () => {
     await useFlightStore.getState().recordAto(legId, 495)
     await useFlightStore.getState().recordAto(legId, 497) // long-press correction
 
-    expect(useFlightStore.getState().currentFlight!.legActuals).toEqual([{ legId, atoUtcMin: 497 }])
+    expect(useFlightStore.getState().currentFlight!.legActuals).toEqual([{ legId, atoMin: 497 }])
   })
 
   it('clearAto removes the ATO entry again', async () => {

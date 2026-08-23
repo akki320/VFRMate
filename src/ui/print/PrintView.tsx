@@ -1,6 +1,7 @@
 import type { Flight } from '../../domain/types'
-import { computeFlightLegs, reEstimateLegs, resolveLeg } from '../../domain/navigation'
-import { formatDeltaMinutes, formatUtcMinutes } from '../../domain/format'
+import { computeLegDerived, reEstimateEto, totalDistanceNm, totalTimeMin } from '../../domain/flightPlan'
+import { resolveLeg } from '../../domain/navigation'
+import { formatDeltaMinutes, formatHoursMinutes, formatUtcMinutes } from '../../domain/format'
 
 /**
  * Druckansicht: eine A4-Seite im Layout des Papierformulars, als Backup
@@ -13,8 +14,9 @@ import { formatDeltaMinutes, formatUtcMinutes } from '../../domain/format'
 export function PrintView({ flight }: { flight: Flight | undefined }) {
   if (!flight) return null
 
-  const computedLegs = computeFlightLegs(flight)
-  const reEstimated = reEstimateLegs(flight, computedLegs)
+  const derived = computeLegDerived(flight)
+  const etos = reEstimateEto(flight, derived)
+  const anchorUtcMin = flight.atdUtcMin ?? flight.etdUtcMin
 
   return (
     <div className="print-only" style={{ color: '#000', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '9px' }}>
@@ -51,6 +53,12 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
               ],
             ]}
           />
+          <PrintMetaRow
+            cells={[
+              ['Gesamtstrecke (P14)', `${totalDistanceNm(flight).toFixed(1)} NM`],
+              ['Gesamtzeit (P18)', `${totalTimeMin(flight)} min`],
+            ]}
+          />
         </tbody>
       </table>
 
@@ -67,15 +75,13 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
               'WCA',
               'VAR',
               'MH',
-              'MC',
+              'MC ⚙',
               'Entf.Abschn.',
-              'Entf.Gesamt',
               'Entf.Rest',
               'GS',
               'Zeit Abschn.',
-              'Zeit Gesamt',
-              'Zeit Rest',
-              'ETO',
+              'Zeit Rest ⚙',
+              'ETO ⚙',
               'ATO',
               'Bemerkungen',
             ].map((h) => (
@@ -87,10 +93,10 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
         </thead>
         <tbody>
           {flight.legs.map((leg, index) => {
-            const computed = computedLegs[index]
-            const re = reEstimated[index]
+            const legDerived = derived[index]
+            const eto = etos[index]
             const resolved = resolveLeg(flight, leg)
-            const ato = flight.legActuals.find((a) => a.legId === leg.id)?.atoUtcMin
+            const ato = flight.legActuals.find((a) => a.legId === leg.id)?.atoMin
             return (
               <tr key={leg.id}>
                 <td style={printTdStyle}>{leg.waypoint}</td>
@@ -101,24 +107,20 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
                   {String(resolved.wind.directionDeg).padStart(3, '0')}/{resolved.wind.speedKt}
                 </td>
                 <td style={printTdStyle}>{String(leg.tc).padStart(3, '0')}°</td>
-                <td style={printTdStyle}>{computed.wca}°</td>
+                <td style={printTdStyle}>{leg.wca ?? '–'}°</td>
                 <td style={printTdStyle}>{resolved.variationDeg}°</td>
-                <td style={printTdStyle}>{String(computed.mh).padStart(3, '0')}°</td>
-                <td style={printTdStyle}>{String(computed.mc).padStart(3, '0')}°</td>
+                <td style={printTdStyle}>{leg.mh !== undefined ? `${String(leg.mh).padStart(3, '0')}°` : '–'}</td>
+                <td style={printTdStyle}>{String(legDerived.mc).padStart(3, '0')}°</td>
                 <td style={printTdStyle}>{leg.distanceNm}</td>
+                <td style={printTdStyle}>{leg.distanceRemainNm ?? '–'}</td>
+                <td style={printTdStyle}>{leg.gs ?? '–'}</td>
+                <td style={printTdStyle}>{leg.timeMin ?? '–'}</td>
+                <td style={printTdStyle}>{formatHoursMinutes(legDerived.remainingTimeMin)}</td>
                 <td style={printTdStyle}>
-                  {flight.legs.slice(0, index + 1).reduce((sum, l) => sum + l.distanceNm, 0).toFixed(1)}
+                  {eto.revisedEtoMin}
+                  {eto.deltaMin !== 0 ? ` (${formatDeltaMinutes(eto.deltaMin)})` : ''}
                 </td>
-                <td style={printTdStyle}>{computed.remainingDistanceNm}</td>
-                <td style={printTdStyle}>{computed.gs}</td>
-                <td style={printTdStyle}>{computed.legTimeMin}</td>
-                <td style={printTdStyle}>{computed.cumulativeTimeMin}</td>
-                <td style={printTdStyle}>{computed.remainingTimeMin}</td>
-                <td style={printTdStyle}>
-                  {formatUtcMinutes(computed.etoUtcMin)}
-                  {re.deltaMin !== 0 ? ` (${formatDeltaMinutes(re.deltaMin)})` : ''}
-                </td>
-                <td style={printTdStyle}>{ato !== undefined ? formatUtcMinutes(ato) : ''}</td>
+                <td style={printTdStyle}>{ato ?? ''}</td>
                 <td style={printTdStyle}>{leg.remarks ?? ''}</td>
               </tr>
             )
@@ -126,7 +128,12 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
         </tbody>
       </table>
 
-      <p style={{ marginTop: '4mm', fontSize: '7px' }}>
+      <p style={{ marginTop: '1mm', fontSize: '7px' }}>
+        ETO/ATO/Zeit Rest: Minuten seit ATD{flight.atdUtcMin === undefined ? ' (bzw. ETD, solange keine ATD gesetzt ist)' : ''}
+        {' '}— Anker hier: {formatUtcMinutes(anchorUtcMin)} UTC. ⚙ = automatisch berechnet, alle anderen Spalten
+        Piloteneingabe.
+      </p>
+      <p style={{ marginTop: '2mm', fontSize: '7px' }}>
         Die App ist ein Hilfsmittel für die Planung und ersetzt weder die vorgeschriebene
         Flugvorbereitung noch amtliche Unterlagen. Alle Werte sind vom Piloten zu prüfen.
       </p>

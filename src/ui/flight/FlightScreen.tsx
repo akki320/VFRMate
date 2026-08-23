@@ -27,8 +27,8 @@ export function FlightScreen() {
 
   if (!viewModel) return null
   const { flight, rows, activeIndex } = viewModel
-  const totalDistanceNm = rows.length > 0 ? rows[rows.length - 1].cumulativeDistanceNm : 0
   const hasProgress = flight.legActuals.length > 0 || flight.atdUtcMin !== undefined
+  const remainingDistanceNm = activeIndex !== -1 ? rows[activeIndex].leg.distanceRemainNm : undefined
 
   const warnings: string[] = []
   if (viewModel.arrivesAfterSunset && viewModel.estimatedArrivalUtcMin !== undefined) {
@@ -96,7 +96,13 @@ export function FlightScreen() {
         </div>
       </header>
 
-      <FlightHeader flight={flight} estimatedArrivalUtcMin={viewModel.estimatedArrivalUtcMin} />
+      <FlightHeader
+        flight={flight}
+        totalDistanceNm={viewModel.totalDistanceNm}
+        totalTimeMin={viewModel.totalTimeMin}
+        anchorUtcMinutes={viewModel.anchorUtcMinutes}
+        estimatedArrivalUtcMin={viewModel.estimatedArrivalUtcMin}
+      />
 
       <WarningBanner messages={warnings} />
 
@@ -107,12 +113,7 @@ export function FlightScreen() {
       )}
 
       <section className="mt-3">
-        {rows.length > 0 && (
-          <p className="mono-num mb-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Gesamtstrecke: <span style={{ color: 'var(--text-primary)' }}>{totalDistanceNm.toFixed(1)} NM</span>
-          </p>
-        )}
-        <LegTable rows={rows} visibleColumns={columns.visible} />
+        <LegTable rows={rows} visibleColumns={columns.visible} anchorUtcMinutes={viewModel.anchorUtcMinutes} />
         <button
           type="button"
           onClick={() => void addLeg({ waypoint: 'Neuer Kontrollpunkt', plannedAltitude: '', tc: 0, distanceNm: 0 })}
@@ -130,7 +131,7 @@ export function FlightScreen() {
 
       <RemainingHud
         remainingTimeMin={viewModel.remainingTimeMinEstimated}
-        remainingDistanceNm={viewModel.remainingDistanceNm}
+        remainingDistanceNm={remainingDistanceNm}
         flightComplete={activeIndex === -1}
       />
     </div>

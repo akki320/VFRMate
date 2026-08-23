@@ -5,15 +5,17 @@
  * → ETO der Folgepunkte neu schätzen"); alle anderen Spalten lassen sich
  * beliebig ein-/ausblenden (siehe useColumnVisibility.ts).
  *
+ * Fast alle Spalten sind direkte Piloteneingaben — automatisch berechnet
+ * wird nur MC (siehe domain/flightPlan.ts::computeMc) und ETO/Zeit Rest
+ * (siehe computeLegDerived/reEstimateEto). "Gesamtstrecke" (P14) und
+ * "Gesamtzeit" (P18) sind keine Spalten mehr, sondern Summenwerte
+ * oberhalb der Tabelle (siehe FlightHeader.tsx) — auf jeder Zeile
+ * wiederholt waren sie kaum zu gebrauchen.
+ *
  * "eto" steht bewusst als letzter Eintrag: ETO und ATO sollen immer
  * nebeneinander stehen, und ATO wird als fest angeheftete Spalte direkt
  * nach den hier aufgeführten (sichtbaren) Spalten gerendert (siehe
  * LegTable.tsx) — nichts darf sich also hinter "eto" einreihen.
- *
- * "Entf. Gesamt" (laufende Streckensumme) ist keine eigene Spalte mehr,
- * sondern steht als einzelner Summenwert oberhalb der Tabelle (siehe
- * FlightScreen.tsx) — als Spalte war der Wert auf jeder Zeile wiederholt
- * kaum zu gebrauchen.
  */
 
 export const COLUMN_IDS = [
@@ -30,7 +32,6 @@ export const COLUMN_IDS = [
   'distRemain',
   'gs',
   'timeLeg',
-  'timeAccum',
   'timeRemain',
   'remarks',
   'eto',
@@ -54,18 +55,21 @@ export const COLUMN_LABELS: Record<ColumnId, string> = {
   distRemain: 'Entf. Rest',
   gs: 'GS (VG)',
   timeLeg: 'Zeit Abschnitt',
-  timeAccum: 'Zeit Gesamt',
   timeRemain: 'Zeit Rest',
   eto: 'ETO',
   remarks: 'Bemerkungen',
 }
+
+/** Welche Spalten automatisch berechnet (schreibgeschützt) statt vom
+ * Piloten ausgefüllt sind. */
+export const COMPUTED_COLUMNS: ReadonlySet<ColumnId> = new Set(['mc', 'timeRemain', 'eto'])
 
 /** Für die Spalten-Auswahl gruppiert, in dieser Reihenfolge angezeigt. */
 export const COLUMN_GROUPS: { label: string; columns: ColumnId[] }[] = [
   { label: 'Höhe', columns: ['safetyAlt', 'plannedAlt'] },
   { label: 'Navigation', columns: ['tas', 'wind', 'tc', 'wca', 'var', 'mh', 'mc'] },
   { label: 'Entfernung', columns: ['distLeg', 'distRemain'] },
-  { label: 'Zeit', columns: ['gs', 'timeLeg', 'timeAccum', 'timeRemain', 'eto'] },
+  { label: 'Zeit', columns: ['gs', 'timeLeg', 'timeRemain', 'eto'] },
   { label: 'Sonstiges', columns: ['remarks'] },
 ]
 

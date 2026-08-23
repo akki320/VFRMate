@@ -5,15 +5,21 @@ import { NumberField, TextField, TimeField } from '../components/FormField'
 
 interface FlightHeaderProps {
   flight: Flight
+  totalDistanceNm: number
+  totalTimeMin: number
+  anchorUtcMinutes: number
   estimatedArrivalUtcMin: number | undefined
 }
 
 /** Kopfzeile des Flugdurchführungsplans: Datum, Flugplätze, Muster, Zeiten
  * — genau die Felder aus dem Kopf des Papierformulars, in einer flachen
- * Zeile statt eines mehrteiligen Formulars. */
-export function FlightHeader({ flight, estimatedArrivalUtcMin }: FlightHeaderProps) {
+ * Zeile statt eines mehrteiligen Formulars. Gesamtstrecke (P14) und
+ * Gesamtzeit (P18) sind Summenwerte, keine Tabellenspalten (siehe
+ * domain/flightPlan.ts). */
+export function FlightHeader({ flight, totalDistanceNm, totalTimeMin, anchorUtcMinutes, estimatedArrivalUtcMin }: FlightHeaderProps) {
   const patchCurrentFlight = useFlightStore((s) => s.patchCurrentFlight)
-  const lastAto = [...flight.legActuals].sort((a, b) => a.atoUtcMin - b.atoUtcMin).at(-1)?.atoUtcMin
+  const lastAtoMin = [...flight.legActuals].sort((a, b) => a.atoMin - b.atoMin).at(-1)?.atoMin
+  const ataUtcMin = lastAtoMin !== undefined ? (((anchorUtcMinutes + lastAtoMin) % 1440) + 1440) % 1440 : undefined
 
   return (
     <div className="grid grid-cols-2 gap-x-3 gap-y-2 py-2 sm:grid-cols-4 lg:grid-cols-6">
@@ -71,8 +77,10 @@ export function FlightHeader({ flight, estimatedArrivalUtcMin }: FlightHeaderPro
       <TimeField id="h-atd" label="ATD" value={flight.atdUtcMin} onChange={(v) => void patchCurrentFlight({ atdUtcMin: v })} />
       <TimeField id="h-ss" label="SS" value={flight.sunsetUtcMin} onChange={(v) => void patchCurrentFlight({ sunsetUtcMin: v })} />
 
-      <ReadOnlyField label="ETA" value={estimatedArrivalUtcMin !== undefined ? formatUtcMinutes(estimatedArrivalUtcMin) : '–'} />
-      <ReadOnlyField label="ATA" value={lastAto !== undefined ? formatUtcMinutes(lastAto) : '–'} />
+      <ReadOnlyField label="ETA (UTC)" value={estimatedArrivalUtcMin !== undefined ? formatUtcMinutes(estimatedArrivalUtcMin) : '–'} />
+      <ReadOnlyField label="ATA (UTC)" value={ataUtcMin !== undefined ? formatUtcMinutes(ataUtcMin) : '–'} />
+      <ReadOnlyField label="Gesamtstrecke (P14)" value={`${totalDistanceNm.toFixed(1)} NM`} />
+      <ReadOnlyField label="Gesamtzeit (P18)" value={`${totalTimeMin} min`} />
     </div>
   )
 }
@@ -80,7 +88,7 @@ export function FlightHeader({ flight, estimatedArrivalUtcMin }: FlightHeaderPro
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-      <span>{label} (UTC)</span>
+      <span>{label}</span>
       <span className="mono-num rounded border px-2 py-1.5 text-sm" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
         {value}
       </span>
