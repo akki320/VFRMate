@@ -2,8 +2,8 @@ import { useUtcClock, formatUtcClock } from '../hooks/useUtcClock'
 
 interface RemainingHudProps {
   remainingTimeMin: number
-  /** Entf. Rest der aktiven Zeile — eine Piloteneingabe, kein berechneter
-   * Wert (siehe Leg.distanceRemainNm); "–" solange nicht ausgefüllt. */
+  /** Entf. Rest der aktiven Zeile (siehe flightPlan.ts::LegDerived.remainingDistanceNm);
+   * "–" nur, wenn kein Kontrollpunkt mehr aktiv ist (Flug beendet). */
   remainingDistanceNm: number | undefined
   flightComplete: boolean
 }

@@ -227,7 +227,7 @@ export function LegTableRow({
       case 'tc':
         return <NumberCell label="TC" value={leg.tc} onChange={(v) => void updateLeg(leg.id, { tc: v ?? 0 })} />
       case 'wca':
-        return <NumberCell label="WCA" value={leg.wca} onChange={(v) => void updateLeg(leg.id, { wca: v })} />
+        return <ReadOnly>{signedDegLabel(derived.wca)}</ReadOnly>
       case 'var':
         return (
           <NumberCell
@@ -249,13 +249,7 @@ export function LegTableRow({
           />
         )
       case 'distRemain':
-        return (
-          <NumberCell
-            label="Distanz Rest"
-            value={leg.distanceRemainNm}
-            onChange={(v) => void updateLeg(leg.id, { distanceRemainNm: v })}
-          />
-        )
+        return <ReadOnly>{derived.remainingDistanceNm}</ReadOnly>
       case 'gs':
         return <NumberCell label="GS" value={leg.gs} onChange={(v) => void updateLeg(leg.id, { gs: v })} />
       case 'timeLeg':
@@ -293,6 +287,12 @@ export function LegTableRow({
 
 function courseLabel(deg: number): string {
   return `${String(deg).padStart(3, '0')}°`
+}
+
+/** WCA-Anzeige: vorzeichenbehaftetes Grad (z. B. "+3°"/"-3°"/"0°"), im
+ * Gegensatz zu Kursangaben (courseLabel) kein 0–359°-Wert. */
+function signedDegLabel(deg: number): string {
+  return `${deg > 0 ? '+' : ''}${deg}°`
 }
 
 function ReadOnly({ children }: { children: React.ReactNode }) {

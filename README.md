@@ -238,6 +238,14 @@ npx vitest run    # Unit-Tests
   getippt war (z. B. ließ sich TAS so nie unter den globalen Standard
   von 100 kt eingeben); der neue Entwurfstext committet erst bei
   vollständiger Zahl oder beim Verlassen des Felds.
+- **Phase 10 (abgeschlossen):** Zwei weitere Spalten automatisiert. Entf.
+  Rest = Gesamtstrecke (P14) − Entf. Abschnitt-Summe bis einschließlich
+  diesem Leg, analog zu Zeit Rest. WCA wird wieder automatisch aus TC,
+  TAS und Wind ermittelt (Winddreieck, siehe navigation.ts::windTriangle)
+  statt vom Piloten eingetragen — MH und GS bleiben bewusst manuelle
+  Felder. Beide neuen Spalten in domain/flightPlan.ts::LegDerived, in der
+  Kopfzeile mit "⚙" markiert; `Leg.wca`/`Leg.distanceRemainNm` als
+  Piloten-Eingabefelder entfernt, da nun immer abgeleitet.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

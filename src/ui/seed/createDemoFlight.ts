@@ -26,20 +26,18 @@ function demoFlightInput(): Omit<Flight, 'id' | 'legs' | 'legActuals'> {
 export async function createDemoFlight(): Promise<void> {
   await useFlightStore.getState().createNew(demoFlightInput())
 
-  // wca/mh/gs/timeMin/distanceRemainNm sind Piloteneingaben (kein
-  // Winddreieck-Automatismus mehr) — hier mit plausiblen, von Hand
+  // mh/gs/timeMin sind Piloteneingaben — hier mit plausiblen, von Hand
   // "vorgerechneten" Werten befüllt, damit der Beispielflug direkt
-  // vollständig aussieht.
+  // vollständig aussieht. wca und distanceRemainNm werden automatisch
+  // berechnet (siehe domain/flightPlan.ts), hier also nicht gesetzt.
   const legs: Array<Omit<Flight['legs'][number], 'id'>> = [
     {
       waypoint: 'Kirchturm Musterdorf',
       safetyAltitudeFt: 2500,
       plannedAltitude: '2500 ft',
       tc: 45,
-      wca: -3,
       mh: 40,
       distanceNm: 12,
-      distanceRemainNm: 49,
       gs: 111,
       timeMin: 6,
     },
@@ -48,10 +46,8 @@ export async function createDemoFlight(): Promise<void> {
       safetyAltitudeFt: 2500,
       plannedAltitude: '2500 ft',
       tc: 80,
-      wca: 1,
       mh: 79,
       distanceNm: 18,
-      distanceRemainNm: 31,
       gs: 112,
       timeMin: 10,
     },
@@ -60,10 +56,8 @@ export async function createDemoFlight(): Promise<void> {
       safetyAltitudeFt: 3000,
       plannedAltitude: '3000 ft',
       tc: 100,
-      wca: 4,
       mh: 102,
       distanceNm: 22,
-      distanceRemainNm: 9,
       gs: 117,
       timeMin: 11,
       wind: { directionDeg: 260, speedKt: 18 },
@@ -73,10 +67,8 @@ export async function createDemoFlight(): Promise<void> {
       safetyAltitudeFt: 2000,
       plannedAltitude: '2000 ft',
       tc: 130,
-      wca: 6,
       mh: 134,
       distanceNm: 9,
-      distanceRemainNm: 0,
       gs: 105,
       timeMin: 5,
     },

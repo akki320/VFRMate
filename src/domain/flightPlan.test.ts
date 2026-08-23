@@ -56,7 +56,7 @@ describe('totalDistanceNm / totalTimeMin', () => {
 })
 
 describe('computeLegDerived', () => {
-  it('chains MC, cumulative distance/time and remaining time across legs', () => {
+  it('chains MC, cumulative distance/time, remaining time and remaining distance across legs', () => {
     const flight = makeFlight([
       makeLeg({ id: 'leg-1', tc: 90, distanceNm: 20, timeMin: 10 }),
       makeLeg({ id: 'leg-2', tc: 100, distanceNm: 15, timeMin: 8, variationDeg: -1 }),
@@ -65,13 +65,31 @@ describe('computeLegDerived', () => {
 
     expect(derived[0].mc).toBe(88) // 90 - 2 (global VAR)
     expect(derived[0].cumulativeDistanceNm).toBe(20)
+    expect(derived[0].remainingDistanceNm).toBe(15) // 35 total - 20
     expect(derived[0].cumulativeTimeMin).toBe(10)
     expect(derived[0].remainingTimeMin).toBe(8)
 
     expect(derived[1].mc).toBe(101) // 100 - (-1) leg override
     expect(derived[1].cumulativeDistanceNm).toBe(35)
+    expect(derived[1].remainingDistanceNm).toBe(0)
     expect(derived[1].cumulativeTimeMin).toBe(18)
     expect(derived[1].remainingTimeMin).toBe(0)
+  })
+
+  it('computes WCA from TC, TAS and wind via the wind triangle', () => {
+    const flight = makeFlight([makeLeg({ tc: 90, wind: { directionDeg: 0, speedKt: 20 } })], {
+      globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 0 },
+    })
+    const derived = computeLegDerived(flight)
+    // Wind from 0°, course 90°: crosswind from the left -> negative WCA
+    // (correction to the left; see navigation.ts::windTriangle).
+    expect(derived[0].wca).toBeLessThan(0)
+  })
+
+  it('leaves WCA at 0 with no wind', () => {
+    const flight = makeFlight([makeLeg({ tc: 45 })])
+    const derived = computeLegDerived(flight)
+    expect(derived[0].wca).toBe(0)
   })
 })
 

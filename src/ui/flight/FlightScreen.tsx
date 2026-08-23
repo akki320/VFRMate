@@ -28,7 +28,7 @@ export function FlightScreen() {
   if (!viewModel) return null
   const { flight, rows, activeIndex } = viewModel
   const hasProgress = flight.legActuals.length > 0 || flight.atdUtcMin !== undefined
-  const remainingDistanceNm = activeIndex !== -1 ? rows[activeIndex].leg.distanceRemainNm : undefined
+  const remainingDistanceNm = activeIndex !== -1 ? rows[activeIndex].derived.remainingDistanceNm : undefined
 
   const warnings: string[] = []
   if (viewModel.arrivesAfterSunset && viewModel.estimatedArrivalUtcMin !== undefined) {

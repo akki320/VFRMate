@@ -72,12 +72,12 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
               'TAS',
               'Wind',
               'TC',
-              'WCA',
+              'WCA ⚙',
               'VAR',
               'MH',
               'MC ⚙',
               'Entf.Abschn.',
-              'Entf.Rest',
+              'Entf.Rest ⚙',
               'GS',
               'Zeit Abschn.',
               'Zeit Rest ⚙',
@@ -107,12 +107,15 @@ export function PrintView({ flight }: { flight: Flight | undefined }) {
                   {String(resolved.wind.directionDeg).padStart(3, '0')}/{resolved.wind.speedKt}
                 </td>
                 <td style={printTdStyle}>{String(leg.tc).padStart(3, '0')}°</td>
-                <td style={printTdStyle}>{leg.wca ?? '–'}°</td>
+                <td style={printTdStyle}>
+                  {legDerived.wca > 0 ? '+' : ''}
+                  {legDerived.wca}°
+                </td>
                 <td style={printTdStyle}>{resolved.variationDeg}°</td>
                 <td style={printTdStyle}>{leg.mh !== undefined ? `${String(leg.mh).padStart(3, '0')}°` : '–'}</td>
                 <td style={printTdStyle}>{String(legDerived.mc).padStart(3, '0')}°</td>
                 <td style={printTdStyle}>{leg.distanceNm}</td>
-                <td style={printTdStyle}>{leg.distanceRemainNm ?? '–'}</td>
+                <td style={printTdStyle}>{legDerived.remainingDistanceNm}</td>
                 <td style={printTdStyle}>{leg.gs ?? '–'}</td>
                 <td style={printTdStyle}>{leg.timeMin ?? '–'}</td>
                 <td style={printTdStyle}>{formatHoursMinutes(legDerived.remainingTimeMin)}</td>

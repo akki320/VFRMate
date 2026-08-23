@@ -5,12 +5,12 @@
  * → ETO der Folgepunkte neu schätzen"); alle anderen Spalten lassen sich
  * beliebig ein-/ausblenden (siehe useColumnVisibility.ts).
  *
- * Fast alle Spalten sind direkte Piloteneingaben — automatisch berechnet
- * wird nur MC (siehe domain/flightPlan.ts::computeMc) und ETO/Zeit Rest
- * (siehe computeLegDerived/reEstimateEto). "Gesamtstrecke" (P14) und
- * "Gesamtzeit" (P18) sind keine Spalten mehr, sondern Summenwerte
- * oberhalb der Tabelle (siehe FlightHeader.tsx) — auf jeder Zeile
- * wiederholt waren sie kaum zu gebrauchen.
+ * Die meisten Spalten sind direkte Piloteneingaben — automatisch berechnet
+ * werden WCA, MC, Entf. Rest, Zeit Rest und ETO (siehe
+ * domain/flightPlan.ts::computeLegDerived/reEstimateEto). "Gesamtstrecke"
+ * (P14) und "Gesamtzeit" (P18) sind keine Spalten mehr, sondern
+ * Summenwerte oberhalb der Tabelle (siehe FlightHeader.tsx) — auf jeder
+ * Zeile wiederholt waren sie kaum zu gebrauchen.
  *
  * "eto" steht bewusst als letzter Eintrag: ETO und ATO sollen immer
  * nebeneinander stehen, und ATO wird als fest angeheftete Spalte direkt
@@ -62,7 +62,7 @@ export const COLUMN_LABELS: Record<ColumnId, string> = {
 
 /** Welche Spalten automatisch berechnet (schreibgeschützt) statt vom
  * Piloten ausgefüllt sind. */
-export const COMPUTED_COLUMNS: ReadonlySet<ColumnId> = new Set(['mc', 'timeRemain', 'eto'])
+export const COMPUTED_COLUMNS: ReadonlySet<ColumnId> = new Set(['wca', 'mc', 'distRemain', 'timeRemain', 'eto'])
 
 /** Für die Spalten-Auswahl gruppiert, in dieser Reihenfolge angezeigt. */
 export const COLUMN_GROUPS: { label: string; columns: ColumnId[] }[] = [

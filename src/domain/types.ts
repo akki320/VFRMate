@@ -150,15 +150,15 @@ export interface Wind {
 /**
  * Ein Abschnitt (Leg) zwischen zwei Kontrollpunkten.
  *
- * Auf Wunsch des Nutzers sind fast alle Felder direkte Eingabewerte, wie
- * auf dem Papierformular per Hand ausgefüllt — nur MC (aus TC und VAR),
- * Gesamtstrecke/Gesamtzeit (Summen über alle Legs) und ETO/Zeit Rest
- * (aus den Zeit-Abschnitt-Werten fortgeschrieben) werden automatisch
- * berechnet (siehe domain/flightPlan.ts). WCA, MH und GS insbesondere
- * sind bewusst reine Eingabefelder — die App rechnet das Winddreieck
- * nicht mehr automatisch, das bleibt dem Piloten (E6B) überlassen; die
- * dafür nötige Rechenlogik (windTriangle/courseChain in navigation.ts)
- * bleibt im Code erhalten, ist aber nicht mehr an die UI angebunden.
+ * Auf Wunsch des Nutzers sind die meisten Felder direkte Eingabewerte, wie
+ * auf dem Papierformular per Hand ausgefüllt. Automatisch berechnet werden
+ * (siehe domain/flightPlan.ts): WCA (aus TC, TAS und Wind, Winddreieck),
+ * MC (aus TC und VAR), Gesamtstrecke/Gesamtzeit (Summen über alle Legs),
+ * Entf. Rest/Zeit Rest (Gesamtstrecke/-zeit minus die Summe bis
+ * einschließlich diesem Leg) sowie ETO (aus den Zeit-Abschnitt-Werten
+ * fortgeschrieben). MH und GS bleiben bewusst reine Eingabefelder — die
+ * App rechnet daraus nicht automatisch weiter, das bleibt dem Piloten
+ * überlassen.
  */
 export interface Leg {
   id: string
@@ -172,16 +172,10 @@ export interface Leg {
   plannedAltitude: string
   /** Rechtweisender Kurs (True Course) in °, 0–359. */
   tc: number
-  /** Windversetzungswinkel in °, vom Piloten eingetragen (kein
-   * Winddreieck-Automatismus mehr). */
-  wca?: number
   /** Missweisender Steuerkurs (MH/mwSK) in °, vom Piloten eingetragen. */
   mh?: number
   /** Distanz zum vorherigen Kontrollpunkt in NM. */
   distanceNm: number
-  /** Restdistanz zum Zielflugplatz ab diesem Kontrollpunkt in NM, vom
-   * Piloten eingetragen. */
-  distanceRemainNm?: number
   /** Groundspeed (GS/VG) in kt, vom Piloten eingetragen. */
   gs?: number
   /** Flugzeit dieses Abschnitts (Zeit Abschnitt) in Minuten, vom Piloten

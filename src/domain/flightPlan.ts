@@ -1,9 +1,11 @@
 /**
- * Die vereinfachte Streckenrechnung: fast alle Leg-Werte sind direkte
- * Piloteneingaben (siehe Leg in types.ts) — automatisch berechnet wird
- * nur, was sich zwingend aus ihnen ergibt:
+ * Die vereinfachte Streckenrechnung: die meisten Leg-Werte sind direkte
+ * Piloteneingaben (siehe Leg in types.ts) — automatisch berechnet wird,
+ * was sich zwingend aus ihnen ergibt:
+ *   - WCA aus TC, TAS und Wind (Winddreieck, siehe navigation.ts)
  *   - MC = TC − VAR
  *   - Gesamtstrecke = Summe aller Distanz-Abschnitt-Werte
+ *   - Entf. Rest = Gesamtstrecke − Distanz bis einschließlich diesem Leg
  *   - Gesamtzeit = Summe aller Zeit-Abschnitt-Werte
  *   - Zeit Rest = Gesamtzeit − Zeit bis einschließlich diesem Leg
  *   - ETO = fortlaufende Summe der Zeit-Abschnitt-Werte ("Minuten seit
@@ -12,20 +14,22 @@
  * ETO/ATO sind bewusst keine Uhrzeiten (UTC-Minuten seit Mitternacht),
  * sondern verstrichene Minuten seit Abflug — dadurch ist kein Abgleich
  * mit der Wanduhr nötig, beide Werte leben in derselben Einheit und sind
- * direkt vergleichbar. Das (weiterhin vorhandene, aber hier nicht mehr
- * verwendete) Winddreieck in navigation.ts bleibt für eine mögliche
- * spätere Wiederverwendung erhalten.
+ * direkt vergleichbar.
  */
 import type { Flight, LegActual } from './types'
 import { normalizeCourseDeg, roundDistanceNm, roundMinutes } from './rounding'
-import { resolveLeg } from './navigation'
+import { resolveLeg, windTriangle } from './navigation'
 
 export interface LegDerived {
   legId: string
+  /** WCA aus TC, TAS und Wind (Winddreieck). */
+  wca: number
   /** MC = TC − VAR, 0–359°. */
   mc: number
   /** Distanz vom Start bis einschließlich dieses Legs, in NM. */
   cumulativeDistanceNm: number
+  /** Entf. Rest: Gesamtstrecke − cumulativeDistanceNm, in NM. */
+  remainingDistanceNm: number
   /** Geplante ETO dieses Legs: Summe der Zeit-Abschnitt-Werte bis
    * einschließlich diesem Leg, in Minuten seit ATD/ETD. */
   cumulativeTimeMin: number
@@ -33,8 +37,7 @@ export interface LegDerived {
   remainingTimeMin: number
 }
 
-/** MC = TC − VAR, auf 0–359° normalisiert. Die einzige noch automatisch
- * berechnete Kursgröße. */
+/** MC = TC − VAR, auf 0–359° normalisiert. */
 export function computeMc(tc: number, variationDeg: number): number {
   return normalizeCourseDeg(tc - variationDeg)
 }
@@ -51,21 +54,26 @@ export function totalTimeMin(flight: Flight): number {
   return roundMinutes(flight.legs.reduce((sum, leg) => sum + (leg.timeMin ?? 0), 0))
 }
 
-/** MC je Leg, laufende Distanz-/Zeitsumme und Zeit Rest. */
+/** WCA, MC, Entf. Rest und Zeit Rest je Leg sowie die laufende
+ * Distanz-/Zeitsumme. */
 export function computeLegDerived(flight: Flight): LegDerived[] {
-  const total = totalTimeMin(flight)
+  const totalTime = totalTimeMin(flight)
+  const totalDistance = totalDistanceNm(flight)
 
   let cumulativeDistanceNm = 0
   let cumulativeTimeMin = 0
   return flight.legs.map((leg) => {
+    const resolved = resolveLeg(flight, leg)
     cumulativeDistanceNm += leg.distanceNm
     cumulativeTimeMin += leg.timeMin ?? 0
     return {
       legId: leg.id,
-      mc: computeMc(leg.tc, resolveLeg(flight, leg).variationDeg),
+      wca: windTriangle(leg.tc, resolved.tasKt, resolved.wind).wca,
+      mc: computeMc(leg.tc, resolved.variationDeg),
       cumulativeDistanceNm: roundDistanceNm(cumulativeDistanceNm),
+      remainingDistanceNm: roundDistanceNm(totalDistance - cumulativeDistanceNm),
       cumulativeTimeMin: roundMinutes(cumulativeTimeMin),
-      remainingTimeMin: roundMinutes(total - cumulativeTimeMin),
+      remainingTimeMin: roundMinutes(totalTime - cumulativeTimeMin),
     }
   })
 }
