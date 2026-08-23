@@ -1,7 +1,7 @@
 import type { Flight } from '../../domain/types'
 import { formatUtcMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
-import { NumberField, TextField, TimeField } from '../components/FormField'
+import { TextField, TimeField } from '../components/FormField'
 
 interface FlightHeaderProps {
   flight: Flight
@@ -65,14 +65,6 @@ export function FlightHeader({ flight, totalDistanceNm, totalTimeMin, anchorUtcM
         value={flight.aircraftRegistration}
         onChange={(v) => void patchCurrentFlight({ aircraftRegistration: v.toUpperCase() })}
       />
-      <NumberField
-        id="h-ta"
-        label="Überg.FL"
-        suffix="ft"
-        value={flight.transitionAltitudeFt}
-        onChange={(v) => void patchCurrentFlight({ transitionAltitudeFt: v ?? 0 })}
-      />
-      <TextField id="h-tl" label="TL" value={flight.transitionLevel} onChange={(v) => void patchCurrentFlight({ transitionLevel: v })} />
       <TimeField id="h-etd" label="ETD" value={flight.etdUtcMin} onChange={(v) => void patchCurrentFlight({ etdUtcMin: v ?? 0 })} />
       <TimeField id="h-atd" label="ATD" value={flight.atdUtcMin} onChange={(v) => void patchCurrentFlight({ atdUtcMin: v })} />
       <TimeField id="h-ss" label="SS" value={flight.sunsetUtcMin} onChange={(v) => void patchCurrentFlight({ sunsetUtcMin: v })} />

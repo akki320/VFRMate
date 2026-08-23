@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatDeltaMinutes, formatHoursMinutes } from '../../domain/format'
 import { useFlightStore } from '../../store/flightStore'
 import type { ColumnId } from './columns'
@@ -6,6 +7,83 @@ import { AtoCell } from './AtoCell'
 
 const inputClass = 'mono-num w-full min-w-0 rounded border px-1.5 py-1 text-sm'
 const inputStyle = { borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }
+
+/** Wandelt einen Entwurfstext in eine Zahl um — akzeptiert sowohl "1.6"
+ * als auch "1,6" (deutsches Dezimalkomma). Gibt `undefined` für Text
+ * zurück, der (noch) keine vollständige Zahl ist ("", "-", "1,"), damit
+ * der Aufrufer solche Zwischenzustände nicht als "Feld geleert" wertet. */
+function parseDraft(text: string): number | undefined {
+  const normalized = text.trim().replace(',', '.')
+  if (normalized === '' || normalized === '-') return undefined
+  const n = Number(normalized)
+  return Number.isFinite(n) ? n : undefined
+}
+
+interface NumberCellProps {
+  label: string
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+  widthCh?: number
+}
+
+/**
+ * Zahleneingabe für die Tabellenzellen. Bewusst `type="text"` mit
+ * `inputMode="decimal"` statt `type="number"`: native Zahlenfelder zeigen
+ * auf vielen Mobilgeräten eine reine Ziffern-Tastatur ohne Minus- oder
+ * Komma-Taste und lehnen ein getipptes "," als Dezimaltrennzeichen rundweg
+ * ab — genau das Problem bei VAR (Vorzeichen) und Entfernungen ("1,6 NM").
+ *
+ * Hält während der Eingabe einen eigenen Entwurfstext, der erst bei
+ * vollständiger Zahl (oder beim Verlassen des Felds) über `onChange` nach
+ * außen committet wird. Ohne das würde z. B. bei TAS/VAR (die auf einen
+ * globalen Standardwert zurückfallen, siehe navigation.ts::resolveLeg) das
+ * Leeren des Felds sofort ein `undefined` committen und die Zelle auf den
+ * Standardwert zurückspringen lassen, noch bevor die neue Zahl fertig
+ * getippt ist — z. B. ließ sich TAS so nie unter den globalen Standard von
+ * 100 kt eingeben.
+ */
+function NumberCell({ label, value, onChange, widthCh = 5 }: NumberCellProps) {
+  const [draft, setDraft] = useState(value === undefined ? '' : String(value))
+  const [focused, setFocused] = useState(false)
+  // Entwurf während des Renderns statt in einem Effect an den externen
+  // Wert angleichen (React-Pattern "adjusting state during rendering") —
+  // vermeidet einen zusätzlichen Render und den oxlint-Hinweis auf
+  // setState-in-effect. Nur synchronisieren, solange das Feld nicht
+  // fokussiert ist, sonst würde eine externe Änderung mitten in der
+  // Eingabe den Entwurfstext überschreiben.
+  const [lastSeenValue, setLastSeenValue] = useState(value)
+  if (value !== lastSeenValue && !focused) {
+    setLastSeenValue(value)
+    setDraft(value === undefined ? '' : String(value))
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      aria-label={label}
+      value={draft}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => {
+        const text = e.target.value
+        setDraft(text)
+        const parsed = parseDraft(text)
+        if (parsed !== undefined) onChange(parsed)
+      }}
+      onBlur={() => {
+        setFocused(false)
+        const parsed = parseDraft(draft)
+        onChange(parsed)
+        setDraft(parsed === undefined ? '' : String(parsed))
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      className={inputClass}
+      style={{ ...inputStyle, minWidth: `${widthCh}ch` }}
+    />
+  )
+}
 
 interface LegTableRowProps {
   row: FlightTableRow
@@ -105,24 +183,16 @@ export function LegTableRow({
     </tr>
   )
 
-  function numberCell(label: string, value: number | undefined, onChange: (v: number | undefined) => void, step?: number) {
-    return (
-      <input
-        type="number"
-        step={step}
-        aria-label={label}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-        className={inputClass}
-        style={{ ...inputStyle, minWidth: '5ch' }}
-      />
-    )
-  }
-
   function renderCell(id: ColumnId): React.ReactNode {
     switch (id) {
       case 'safetyAlt':
-        return numberCell('Sicherheitshöhe', leg.safetyAltitudeFt, (v) => void updateLeg(leg.id, { safetyAltitudeFt: v }))
+        return (
+          <NumberCell
+            label="Sicherheitshöhe"
+            value={leg.safetyAltitudeFt}
+            onChange={(v) => void updateLeg(leg.id, { safetyAltitudeFt: v })}
+          />
+        )
       case 'plannedAlt':
         return (
           <input
@@ -135,49 +205,61 @@ export function LegTableRow({
           />
         )
       case 'tas':
-        return numberCell('TAS', resolved.tasKt, (v) => void updateLeg(leg.id, { tasKt: v }))
+        return <NumberCell label="TAS" value={resolved.tasKt} onChange={(v) => void updateLeg(leg.id, { tasKt: v })} />
       case 'wind':
         return (
           <div className="flex items-center justify-end gap-1">
-            <input
-              type="number"
-              aria-label="Windrichtung"
+            <NumberCell
+              label="Windrichtung"
               value={resolved.wind.directionDeg}
-              onChange={(e) =>
-                void updateLeg(leg.id, { wind: { ...resolved.wind, directionDeg: Number(e.target.value) } })
-              }
-              className={inputClass}
-              style={{ ...inputStyle, width: '4.5ch' }}
+              onChange={(v) => void updateLeg(leg.id, { wind: { ...resolved.wind, directionDeg: v ?? 0 } })}
+              widthCh={4.5}
             />
             <span style={{ color: 'var(--text-muted)' }}>/</span>
-            <input
-              type="number"
-              aria-label="Windstärke"
+            <NumberCell
+              label="Windstärke"
               value={resolved.wind.speedKt}
-              onChange={(e) => void updateLeg(leg.id, { wind: { ...resolved.wind, speedKt: Number(e.target.value) } })}
-              className={inputClass}
-              style={{ ...inputStyle, width: '4ch' }}
+              onChange={(v) => void updateLeg(leg.id, { wind: { ...resolved.wind, speedKt: v ?? 0 } })}
+              widthCh={4}
             />
           </div>
         )
       case 'tc':
-        return numberCell('TC', leg.tc, (v) => void updateLeg(leg.id, { tc: v ?? 0 }))
+        return <NumberCell label="TC" value={leg.tc} onChange={(v) => void updateLeg(leg.id, { tc: v ?? 0 })} />
       case 'wca':
-        return numberCell('WCA', leg.wca, (v) => void updateLeg(leg.id, { wca: v }))
+        return <NumberCell label="WCA" value={leg.wca} onChange={(v) => void updateLeg(leg.id, { wca: v })} />
       case 'var':
-        return numberCell('Missweisung', resolved.variationDeg, (v) => void updateLeg(leg.id, { variationDeg: v }))
+        return (
+          <NumberCell
+            label="Missweisung"
+            value={resolved.variationDeg}
+            onChange={(v) => void updateLeg(leg.id, { variationDeg: v })}
+          />
+        )
       case 'mh':
-        return numberCell('MH', leg.mh, (v) => void updateLeg(leg.id, { mh: v }))
+        return <NumberCell label="MH" value={leg.mh} onChange={(v) => void updateLeg(leg.id, { mh: v })} />
       case 'mc':
         return <ReadOnly>{courseLabel(derived.mc)}</ReadOnly>
       case 'distLeg':
-        return numberCell('Distanz Abschnitt', leg.distanceNm, (v) => void updateLeg(leg.id, { distanceNm: v ?? 0 }), 0.1)
+        return (
+          <NumberCell
+            label="Distanz Abschnitt"
+            value={leg.distanceNm}
+            onChange={(v) => void updateLeg(leg.id, { distanceNm: v ?? 0 })}
+          />
+        )
       case 'distRemain':
-        return numberCell('Distanz Rest', leg.distanceRemainNm, (v) => void updateLeg(leg.id, { distanceRemainNm: v }), 0.1)
+        return (
+          <NumberCell
+            label="Distanz Rest"
+            value={leg.distanceRemainNm}
+            onChange={(v) => void updateLeg(leg.id, { distanceRemainNm: v })}
+          />
+        )
       case 'gs':
-        return numberCell('GS', leg.gs, (v) => void updateLeg(leg.id, { gs: v }))
+        return <NumberCell label="GS" value={leg.gs} onChange={(v) => void updateLeg(leg.id, { gs: v })} />
       case 'timeLeg':
-        return numberCell('Zeit Abschnitt', leg.timeMin, (v) => void updateLeg(leg.id, { timeMin: v }))
+        return <NumberCell label="Zeit Abschnitt" value={leg.timeMin} onChange={(v) => void updateLeg(leg.id, { timeMin: v })} />
       case 'timeRemain':
         return <ReadOnly>{formatHoursMinutes(derived.remainingTimeMin)}</ReadOnly>
       case 'eto':

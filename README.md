@@ -225,6 +225,19 @@ npx vitest run    # Unit-Tests
   ohne UTC-Abgleich; die alte Stundenauflösungs-Logik aus Phase 7 entfiel
   komplett, da sie für Uhrzeiten gedacht war und für reine
   Minutendifferenzen nicht mehr gebraucht wird.
+- **Phase 9 (abgeschlossen):** Eingabe-Feinschliff und Kopfzeile weiter
+  gestrafft — "Überg.FL" und "TL" sind aus der Kopfzeile entfernt.
+  Alle Zahlenfelder der Tabelle (TAS, Wind, TC, WCA, VAR, MH,
+  Entfernungen, GS, Zeit Abschnitt) sind jetzt `type="text"` mit
+  `inputMode="decimal"` statt `type="number"`, mit eigener
+  Entwurfsverwaltung während der Eingabe: akzeptiert Vorzeichen (VAR
+  z. B. "-3") und Dezimalkomma (Entfernungen z. B. "1,6"). Dabei einen
+  echten Bug gefunden und behoben — bei Feldern mit globalem
+  Rückfallwert (TAS, Wind, VAR) sprang das Feld beim Leeren sofort auf
+  den globalen Standardwert zurück, noch bevor die neue Zahl fertig
+  getippt war (z. B. ließ sich TAS so nie unter den globalen Standard
+  von 100 kt eingeben); der neue Entwurfstext committet erst bei
+  vollständiger Zahl oder beim Verlassen des Felds.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.
