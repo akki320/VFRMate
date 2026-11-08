@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFlightStore } from '../store/flightStore'
 import { ImportValidationError, parseFlightImport } from '../store/exportImport'
+import { parseGpxRouteImport } from '../store/gpxImport'
 import { ImportButton } from './components/ImportButton'
 import { ThemeToggleButton } from './components/ThemeToggleButton'
 import { createDemoFlight } from './seed/createDemoFlight'
@@ -104,6 +105,20 @@ export function NoFlightScreen() {
           onFile={(contents) => {
             try {
               const data = parseFlightImport(contents)
+              void importFlight(data)
+              setImportError(undefined)
+            } catch (err) {
+              setImportError(err instanceof ImportValidationError ? err.message : 'Import fehlgeschlagen.')
+            }
+          }}
+        />
+        <ImportButton
+          label="Route importieren (GPX, z. B. SkyDemon)"
+          accept=".gpx,application/gpx+xml"
+          onError={setImportError}
+          onFile={(contents) => {
+            try {
+              const data = parseGpxRouteImport(contents)
               void importFlight(data)
               setImportError(undefined)
             } catch (err) {

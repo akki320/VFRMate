@@ -5,11 +5,15 @@ interface ImportButtonProps {
   label: string
   onFile: (contents: string) => void
   onError: (message: string) => void
+  /** Dateifilter für den nativen Auswahldialog — Standard: das eigene
+   * JSON-Export-Format. Für einen Fremdformat-Import (z.B. GPX, siehe
+   * store/gpxImport.ts) überschreibbar. */
+  accept?: string
 }
 
 /** Datei-Auswahl getarnt als normaler Button (das native <input
  * type="file"> lässt sich nicht direkt stylen). */
-export function ImportButton({ label, onFile, onError }: ImportButtonProps) {
+export function ImportButton({ label, onFile, onError, accept = 'application/json,.json' }: ImportButtonProps) {
   const inputId = useId()
   const [busy, setBusy] = useState(false)
 
@@ -23,7 +27,7 @@ export function ImportButton({ label, onFile, onError }: ImportButtonProps) {
       <input
         id={inputId}
         type="file"
-        accept="application/json,.json"
+        accept={accept}
         className="hidden"
         onChange={async (e) => {
           const file = e.target.files?.[0]

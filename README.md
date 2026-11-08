@@ -40,7 +40,8 @@ vollständig unit-getestet:
   interne Zwischengröße zur Ableitung von MH — auf dem Papierformular gibt
   es dafür keine eigene Spalte ("rwK" steht dort für TC selbst).
 - `greatCircle.ts` — Großkreisrechnung (Haversine + Anfangspeilung) für
-  TC/Distanz aus Koordinaten. Aktuell nicht an die UI angebunden.
+  TC/Distanz aus Koordinaten. Seit Phase 19 an die UI angebunden (siehe
+  `store/gpxImport.ts`).
 - `fuel.ts` / `massBalance.ts` / `runway.ts` — Kraftstoffbedarf, Masse &
   Schwerpunkt (Point-in-Polygon gegen das CG-Envelope), Start-/
   Landestrecke. Die Berechnungslogik bleibt vollständig erhalten und
@@ -133,6 +134,12 @@ für eine spätere Wiederverwendung.
   (`downloadJsonFile`) bzw. eine ausgewählte Datei einlesen
   (`readFileAsText`). "Exportieren" (Flugansicht) / "Flug importieren"
   (Flugliste).
+- `store/gpxImport.ts` — Import einer fremden GPX-Routendatei (z. B. aus
+  SkyDemon exportiert) als neuer Flug. Liest `<rte>`/`<trk>`/`<wpt>` per
+  `DOMParser`, der erste Punkt wird Startflugplatz, jeder weitere ein Leg
+  mit TC/Distanz aus `greatCircle.ts` abgeleitet. "Route importieren
+  (GPX, z. B. SkyDemon)" (Flugliste), nutzt denselben `ImportButton` wie
+  der JSON-Import (jetzt mit konfigurierbarem `accept`).
 - `ui/print/PrintView.tsx` — eine eigenständige, immer im Hintergrund
   gerenderte A4-Seite (`.print-only`/`.no-print` in `index.css`), die nur
   bei `window.print()` sichtbar wird. Bewusst in festen
@@ -402,6 +409,38 @@ npx vitest run    # Unit-Tests
     Toggle und Ein-/Ausblenden der ETO-Spalte (inkl. Konsolen-/
     Seitenfehler-Prüfung) bleiben fehlerfrei; alle 105 Tests grün,
     tsc/Lint/Build sauber.
+- **Phase 19 (abgeschlossen):** SkyDemon-Routen importierbar. SkyDemon
+  exportiert Routen u. a. als GPX (offen dokumentiertes, herstellerunab-
+  hängiges XML-Format, das am weitesten verbreitete Austauschformat
+  zwischen Flugplanungs-Apps) — anders als SkyDemons proprietäre/Garmin-
+  spezifische Formate (FPL, GFP), die bewusst nicht unterstützt werden.
+  Neues `store/gpxImport.ts`: liest die Punktliste aus der ersten `<rte>`
+  (Normalfall für eine exportierte Route), fällt auf `<trk>`/`<trkseg>`
+  bzw. eine reine `<wpt>`-Liste zurück. Der erste Punkt wird
+  Startflugplatz, jeder weitere ein Leg — TC und Distanz werden aus den
+  Koordinaten per Großkreisrechnung abgeleitet (`domain/greatCircle.ts`,
+  bereits seit Phase 4 vorhanden, aber nie an eine Datenquelle
+  angebunden), genau der Zweck, für den `Leg.coordinates`/
+  `Flight.departureCoordinates` im Domain-Modell von Anfang an vorgesehen
+  waren. Neuer Button "Route importieren (GPX, z. B. SkyDemon)" in der
+  Flugliste, nutzt denselben `ImportButton` wie der JSON-Import (jetzt
+  mit konfigurierbarem `accept`-Prop statt fest codiertem
+  `.json`-Filter). Fehlende Felder (Datum, ETD, Übergangshöhe, globale
+  Standardwerte, ...) bekommen dieselben Vorgaben wie ein neu angelegter
+  Flug — der Pilot ergänzt sie im Flugkopf wie gewohnt.
+
+  `gpxImport.ts` nutzt `DOMParser` und ist deshalb nur im Browser
+  aufrufbar; die Tests laufen deshalb mit
+  `// @vitest-environment happy-dom` als Pro-Datei-Override (neue reine
+  Dev-Abhängigkeit `happy-dom`, keine zusätzlichen Laufzeit-Abhängigkeiten
+  im Produktionsbundle). 10 neue Tests (Route/Track/Wegpunktliste-
+  Fallback, Namens-Fallback "WP<n>", TC/Distanz-Ableitung, defekte
+  XML/zu wenige Punkte → `ImportValidationError`, Standardwerte), alle
+  115 Tests grün. Zusätzlich end-to-end per Playwright gegen eine
+  SkyDemon-ähnliche Beispieldatei verifiziert: importierter Flug öffnet
+  sich mit korrekten Kontrollpunktnamen, TC- und Distanzwerten (Gesamt-
+  strecke stimmt mit der Summe der Legs überein), ohne Konsolen-/
+  Seitenfehler. tsc/Lint/Build sauber.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

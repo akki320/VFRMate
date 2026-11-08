@@ -23,6 +23,7 @@
     "@vitest/ui": "^4.1.11",
     "autoprefixer": "^10.5.4",
     "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^21.0.4",
     "idb": "^8.0.3",
     "oxlint": "^1.75.0",
     "postcss": "^8.5.26",
