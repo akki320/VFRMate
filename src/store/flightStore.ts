@@ -38,6 +38,11 @@ interface FlightStoreState {
 
   recordAto: (legId: string, atoMin: number) => Promise<void>
   clearAto: (legId: string) => Promise<void>
+  /** Setzt (oder löscht) die ATD. Anders als ein roher
+   * `patchCurrentFlight({ atdUtcMin })` verschiebt dies zugleich alle
+   * bereits erfassten ATOs um dasselbe Delta — siehe Begründung an der
+   * Implementierung. */
+  setAtd: (atdUtcMin: number | undefined) => Promise<void>
   /** Setzt den Flugfortschritt zurück: löscht alle ATOs und die ATD, ohne
    * Legs/Planung anzurühren — die ETOs fallen dadurch wieder auf ihre
    * ursprünglich geplanten Werte zurück (kein Re-Estimate-Delta mehr). */
@@ -153,6 +158,40 @@ export const useFlightStore = create<FlightStoreState>((set, get) => ({
       ...flight,
       legActuals: flight.legActuals.filter((a) => a.legId !== legId),
     }))
+  },
+
+  /**
+   * `LegActual.atoMin` ist "Minuten seit dem Anker" (ATD, bzw. ETD, solange
+   * noch keine ATD gesetzt ist — siehe types.ts::LegActual). Dieser Anker
+   * ist aber nicht fix: Tippt der Pilot "Überflug", bevor er die ATD
+   * einträgt (z.B. direkt nach dem Start, ATD folgt erst kurz danach),
+   * steht zu diesem Zeitpunkt noch die ETD als Anker — das erfasste
+   * atoMin bildet exakt den damals real beobachteten Uhrzeitpunkt ab
+   * (Anker + atoMin = diese Uhrzeit). Wird die ATD danach gesetzt oder
+   * nachträglich korrigiert, verschiebt sich der Anker, und ohne
+   * Gegenmaßnahme würde dieselbe Zahl atoMin plötzlich eine ANDERE,
+   * falsche Uhrzeit ergeben — ein bereits geschehener, fester Moment darf
+   * sich aber nie rückwirkend verschieben, nur weil später eine genauere
+   * ATD eingetragen wird.
+   *
+   * Deshalb verschiebt setAtd alle bereits vorhandenen legActuals um genau
+   * das Delta zwischen altem und neuem Anker (oldAnchor − newAnchor), bevor
+   * die neue ATD übernommen wird — die reale Uhrzeit jedes bereits
+   * erfassten ATO bleibt dadurch unverändert, exakt wie bei einer noch
+   * nicht erfassten (rein geplanten) Zeile, die sich bewusst WEITER mit
+   * dem Anker mitverschiebt (siehe useFlightTableViewModel.ts).
+   */
+  setAtd: async (atdUtcMin) => {
+    await get().patchCurrentFlight((flight) => {
+      const oldAnchor = flight.atdUtcMin ?? flight.etdUtcMin
+      const newAnchor = atdUtcMin ?? flight.etdUtcMin
+      const delta = oldAnchor - newAnchor
+      return {
+        ...flight,
+        atdUtcMin,
+        legActuals: delta === 0 ? flight.legActuals : flight.legActuals.map((a) => ({ ...a, atoMin: a.atoMin + delta })),
+      }
+    })
   },
 
   resetProgress: async () => {

@@ -145,6 +145,72 @@ describe('useFlightStore', () => {
     expect(useFlightStore.getState().currentFlight!.legActuals).toEqual([])
   })
 
+  it('setAtd shifts already-recorded ATOs so their real clock time is preserved', async () => {
+    // ETD 08:00 (480). Tap "Überflug" happens while there's still no ATD,
+    // so the anchor at that moment is the ETD — atoMin=20 means "real time
+    // 08:20". Entering ATD=08:05 afterwards must not retroactively move
+    // that already-observed moment: it must still mean 08:20, i.e. the
+    // stored atoMin has to shift from 20 to 15 (anchor moved +5).
+    await useFlightStore.getState().createNew(makeFlightInput({ etdUtcMin: 480 }))
+    await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })
+    const legId = useFlightStore.getState().currentFlight!.legs[0].id
+    await useFlightStore.getState().recordAto(legId, 20)
+
+    await useFlightStore.getState().setAtd(485) // ATD 08:05, 5 min late
+
+    const flight = useFlightStore.getState().currentFlight!
+    expect(flight.atdUtcMin).toBe(485)
+    expect(flight.legActuals).toEqual([{ legId, atoMin: 15 }])
+    // Real clock time is preserved: anchor (ATD) + atoMin = 485 + 15 = 500 = 08:20, as before.
+    expect(flight.atdUtcMin! + flight.legActuals[0].atoMin).toBe(480 + 20)
+
+    const persisted = await getFlight(flight.id)
+    expect(persisted?.legActuals).toEqual([{ legId, atoMin: 15 }])
+  })
+
+  it('setAtd re-shifts correctly when the ATD is edited again later (not just set once)', async () => {
+    await useFlightStore.getState().createNew(makeFlightInput({ etdUtcMin: 480 }))
+    await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })
+    const legId = useFlightStore.getState().currentFlight!.legs[0].id
+    await useFlightStore.getState().recordAto(legId, 20) // real time 08:20, anchor still ETD
+
+    await useFlightStore.getState().setAtd(485) // first correction: ATD 08:05
+    await useFlightStore.getState().setAtd(490) // pilot corrects again: actually ATD was 08:10
+
+    const flight = useFlightStore.getState().currentFlight!
+    expect(flight.atdUtcMin).toBe(490)
+    // Real time still 08:20 throughout both corrections.
+    expect(flight.atdUtcMin! + flight.legActuals[0].atoMin).toBe(480 + 20)
+  })
+
+  it('setAtd leaves not-yet-flown legs alone — only recorded ATOs are shifted, planned ETOs still re-anchor freely', async () => {
+    await useFlightStore.getState().createNew(makeFlightInput({ etdUtcMin: 480 }))
+    await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10, timeMin: 15 })
+    await useFlightStore.getState().addLeg({ waypoint: 'B', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10, timeMin: 15 })
+    const [legA] = useFlightStore.getState().currentFlight!.legs
+    await useFlightStore.getState().recordAto(legA.id, 20)
+
+    await useFlightStore.getState().setAtd(485)
+
+    const flight = useFlightStore.getState().currentFlight!
+    expect(flight.legActuals).toEqual([{ legId: legA.id, atoMin: 15 }])
+    expect(flight.legs.map((l) => l.waypoint)).toEqual(['A', 'B'])
+  })
+
+  it('setAtd(undefined) falls back to ETD as the anchor and shifts recorded ATOs accordingly', async () => {
+    await useFlightStore.getState().createNew(makeFlightInput({ etdUtcMin: 480 }))
+    await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })
+    const legId = useFlightStore.getState().currentFlight!.legs[0].id
+    await useFlightStore.getState().setAtd(485)
+    await useFlightStore.getState().recordAto(legId, 15) // real time 08:20, anchor is now ATD 08:05
+
+    await useFlightStore.getState().setAtd(undefined) // ATD cleared, anchor falls back to ETD 08:00
+
+    const flight = useFlightStore.getState().currentFlight!
+    expect(flight.atdUtcMin).toBeUndefined()
+    expect(flight.legActuals).toEqual([{ legId, atoMin: 20 }]) // still real time 08:20
+  })
+
   it('resetProgress clears all ATOs and the ATD, keeping legs/planning intact', async () => {
     await useFlightStore.getState().createNew(makeFlightInput({ atdUtcMin: 481 }))
     await useFlightStore.getState().addLeg({ waypoint: 'A', plannedAltitude: '2000 ft', tc: 0, distanceNm: 10 })

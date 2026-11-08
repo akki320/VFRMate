@@ -472,6 +472,37 @@ npx vitest run    # Unit-Tests
   Nutzer gemeldete Beispiel verifiziert: TC 292, TAS 114, Wind 173/8,
   VAR −4 ergibt jetzt MH 284° — exakt wie SkyDemon. Alle 115 Tests grün,
   tsc/Lint/Build sauber.
+- **Phase 21 (abgeschlossen):** Bugfix ATD. Nutzer meldete: nach Eingabe
+  der ATD stimmten die angezeigten Zeiten nicht mehr. Ursache:
+  `LegActual.atoMin` wird als "Minuten seit dem Anker" gespeichert (Anker
+  = ATD, solange keine ATD gesetzt ist die ETD) — tippt der Pilot
+  "Überflug", bevor er die ATD einträgt, steht als Anker noch die ETD.
+  Wird die ATD danach gesetzt (oder später korrigiert), verschob sich der
+  Anker, und derselbe gespeicherte atoMin-Wert ergab plötzlich eine
+  andere, falsche Uhrzeit — ein bereits erfasster, fester Zeitpunkt
+  verschob sich rückwirkend, nur weil später eine ATD eingetragen wurde.
+  Per Playwright exakt reproduziert: ATO bei Anker=ETD real um 21:33 UTC
+  erfasst, nach nachträglichem Setzen von ATD +10 min zeigte dieselbe
+  Zeile plötzlich 21:43 — 10 Minuten verschoben, exakt um das
+  ETD→ATD-Delta.
+
+  Neue `flightStore.ts::setAtd`-Aktion statt eines rohen
+  `patchCurrentFlight({ atdUtcMin })`: verschiebt beim Setzen/Ändern der
+  ATD alle bereits erfassten `legActuals` um genau das Delta zwischen
+  altem und neuem Anker (`oldAnchor − newAnchor`), bevor die neue ATD
+  übernommen wird — die reale Uhrzeit jedes bereits erfassten ATO bleibt
+  dadurch unverändert, auch bei mehrfacher nachträglicher Korrektur der
+  ATD. Noch nicht erfasste (rein geplante) Zeilen verschieben sich
+  weiterhin bewusst mit dem Anker (das war schon vorher korrekt und bleibt
+  es — nur bereits erfasste ATOs brauchten den Fix). `FlightHeader.tsx`
+  ruft jetzt `setAtd` statt des generischen Patches auf.
+
+  4 neue Tests (Verschiebung beim ersten Setzen, bei mehrfacher
+  Korrektur, Unberührtheit noch nicht geflogener Legs, Rückfall auf ETD
+  bei gelöschter ATD), alle 119 Tests grün. Per Playwright exakt gegen
+  das gemeldete Szenario verifiziert: ATO-Uhrzeit bleibt jetzt über
+  mehrere ATD-Korrekturen hinweg unverändert, noch nicht geflogene Legs
+  verschieben sich weiterhin korrekt mit der ATD. tsc/Lint/Build sauber.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.
