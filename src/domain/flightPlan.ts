@@ -3,8 +3,8 @@
  * Piloteneingaben (siehe Leg in types.ts) — automatisch berechnet wird
  * genau, was der Nutzer als Ausnahme benannt hat:
  *   - WCA aus TC, TAS und Wind (Winddreieck, siehe navigation.ts)
- *   - MC = TC − VAR
- *   - MH = TC + WCA − VAR (TH = TC + WCA, MH = TH − VAR)
+ *   - MC = TC + VAR
+ *   - MH = TC + WCA + VAR (TH = TC + WCA, MH = TH + VAR)
  *   - Gesamtstrecke = Summe aller Distanz-Abschnitt-Werte
  *   - Entf. Rest = Gesamtstrecke − Distanz bis einschließlich diesem Leg
  *   - Gesamtzeit = Summe aller Zeit-Abschnitt-Werte
@@ -20,6 +20,11 @@
  * ergebenden Uhrzeit an (siehe format.ts::clockMinuteOnly), nicht die
  * verstrichene Minutenzahl selbst — die Stunde ist dem Piloten aus dem
  * Kontext klar.
+ *
+ * VAR-Vorzeichen (Phase 20): negativ = östliche Missweisung, positiv =
+ * westliche — siehe navigation.ts::courseChain für die Begründung. Ein
+ * aus SkyDemon abgelesener VAR-Wert lässt sich damit unverändert
+ * übernehmen.
  */
 import type { Flight, LegActual } from './types'
 import { normalizeCourseDeg, roundDistanceNm, roundMinutes } from './rounding'
@@ -29,9 +34,9 @@ export interface LegDerived {
   legId: string
   /** WCA aus TC, TAS und Wind (Winddreieck). */
   wca: number
-  /** MC = TC − VAR, 0–359°. */
+  /** MC = TC + VAR, 0–359°. */
   mc: number
-  /** MH = TC + WCA − VAR, 0–359°. */
+  /** MH = TC + WCA + VAR, 0–359°. */
   mh: number
   /** Distanz vom Start bis einschließlich dieses Legs, in NM. */
   cumulativeDistanceNm: number
@@ -44,14 +49,14 @@ export interface LegDerived {
   remainingTimeMin: number
 }
 
-/** MC = TC − VAR, auf 0–359° normalisiert. */
+/** MC = TC + VAR, auf 0–359° normalisiert. */
 export function computeMc(tc: number, variationDeg: number): number {
-  return normalizeCourseDeg(tc - variationDeg)
+  return normalizeCourseDeg(tc + variationDeg)
 }
 
-/** MH = TC + WCA − VAR, auf 0–359° normalisiert (TH = TC + WCA, MH = TH − VAR). */
+/** MH = TC + WCA + VAR, auf 0–359° normalisiert (TH = TC + WCA, MH = TH + VAR). */
 export function computeMh(tc: number, wca: number, variationDeg: number): number {
-  return normalizeCourseDeg(tc + wca - variationDeg)
+  return normalizeCourseDeg(tc + wca + variationDeg)
 }
 
 /** Gesamtstrecke: Summe aller Distanz-Abschnitt-Werte, auf eine

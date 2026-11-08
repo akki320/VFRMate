@@ -24,26 +24,29 @@ function makeFlight(legs: Leg[], overrides: Partial<Flight> = {}): Flight {
     etdUtcMin: 8 * 60,
     transitionAltitudeFt: 5000,
     transitionLevel: 'FL065',
-    globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: 2 },
+    globalDefaults: { tasKt: 100, wind: { directionDeg: 0, speedKt: 0 }, variationDeg: -2 },
     legs,
     legActuals: [],
     ...overrides,
   }
 }
 
+// VAR-Vorzeichen seit Phase 20: negativ = östliche Missweisung, positiv =
+// westliche (siehe navigation.ts::courseChain) — wie in SkyDemon direkt
+// ablesbar.
 describe('computeMc', () => {
-  it('is TC minus VAR, normalized to 0-359', () => {
-    expect(computeMc(90, 3)).toBe(87)
-    expect(computeMc(2, 5)).toBe(357)
-    expect(computeMc(90, -3)).toBe(93)
+  it('is TC plus VAR, normalized to 0-359', () => {
+    expect(computeMc(90, -3)).toBe(87)
+    expect(computeMc(2, -5)).toBe(357)
+    expect(computeMc(90, 3)).toBe(93)
   })
 })
 
 describe('computeMh', () => {
-  it('is TC plus WCA minus VAR, normalized to 0-359', () => {
-    expect(computeMh(90, 5, 3)).toBe(92)
-    expect(computeMh(2, -1, 5)).toBe(356)
-    expect(computeMh(90, 0, -3)).toBe(93)
+  it('is TC plus WCA plus VAR, normalized to 0-359', () => {
+    expect(computeMh(90, 5, -3)).toBe(92)
+    expect(computeMh(2, -1, -5)).toBe(356)
+    expect(computeMh(90, 0, 3)).toBe(93)
   })
 })
 
@@ -67,17 +70,17 @@ describe('computeLegDerived', () => {
   it('chains MC, cumulative distance/time, remaining time and remaining distance across legs', () => {
     const flight = makeFlight([
       makeLeg({ id: 'leg-1', tc: 90, distanceNm: 20, timeMin: 10 }),
-      makeLeg({ id: 'leg-2', tc: 100, distanceNm: 15, timeMin: 8, variationDeg: -1 }),
+      makeLeg({ id: 'leg-2', tc: 100, distanceNm: 15, timeMin: 8, variationDeg: 1 }),
     ])
     const derived = computeLegDerived(flight)
 
-    expect(derived[0].mc).toBe(88) // 90 - 2 (global VAR)
+    expect(derived[0].mc).toBe(88) // 90 + (-2) (global VAR)
     expect(derived[0].cumulativeDistanceNm).toBe(20)
     expect(derived[0].remainingDistanceNm).toBe(15) // 35 total - 20
     expect(derived[0].cumulativeTimeMin).toBe(10)
     expect(derived[0].remainingTimeMin).toBe(8)
 
-    expect(derived[1].mc).toBe(101) // 100 - (-1) leg override
+    expect(derived[1].mc).toBe(101) // 100 + 1 (leg override)
     expect(derived[1].cumulativeDistanceNm).toBe(35)
     expect(derived[1].remainingDistanceNm).toBe(0)
     expect(derived[1].cumulativeTimeMin).toBe(18)

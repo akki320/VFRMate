@@ -67,6 +67,15 @@ export const COLUMN_LABELS: Record<ColumnId, string> = {
  * Piloten ausgefüllt sind. */
 export const COMPUTED_COLUMNS: ReadonlySet<ColumnId> = new Set(['wca', 'mc', 'mh', 'distRemain', 'timeRemain', 'eto'])
 
+/** Erklärender Hinweis als "ⓘ"-Tooltip neben dem Spaltenkopf, für Spalten
+ * mit einer nicht auf den ersten Blick offensichtlichen Konvention (siehe
+ * LegTable.tsx). Bislang nur VAR — Vorzeichenkonvention seit Phase 20
+ * umgedreht (negativ = Ost, positiv = West, direkt wie in SkyDemon), kam
+ * schon einmal zu einer Verwechslung. */
+export const COLUMN_HINTS: Partial<Record<ColumnId, string>> = {
+  var: 'Vorzeichen: negativ = östliche Missweisung, positiv = westliche — wie in SkyDemon, direkt übertragbar',
+}
+
 /** Für die Spalten-Auswahl gruppiert, in dieser Reihenfolge angezeigt. */
 export const COLUMN_GROUPS: { label: string; columns: ColumnId[] }[] = [
   { label: 'Höhe', columns: ['safetyAlt', 'plannedAlt'] },

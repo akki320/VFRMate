@@ -188,10 +188,13 @@ export interface Leg {
   /** Wind für diesen Abschnitt — überschreibt Flight.globalDefaults.wind.
    * `undefined` bedeutet: globalen Wert übernehmen. */
   wind?: Wind
-  /** Missweisung (Variation) in °, positiv = östliche Missweisung —
-   * überschreibt Flight.globalDefaults.variationDeg. `undefined` bedeutet:
-   * globalen Wert übernehmen. Einzige Grundlage der automatischen
-   * MC-Berechnung (MC = TC − VAR). */
+  /** Missweisung (Variation) in ° — **negativ = östliche, positiv =
+   * westliche Missweisung** (Phase 20, wie in SkyDemon: der dort
+   * angezeigte Wert lässt sich unverändert übernehmen; siehe
+   * navigation.ts::courseChain für die Begründung). Überschreibt
+   * Flight.globalDefaults.variationDeg. `undefined` bedeutet: globalen
+   * Wert übernehmen. Einzige Grundlage der automatischen MC-Berechnung
+   * (MC = TC + VAR). */
   variationDeg?: number
   remarks?: string
 }
@@ -238,9 +241,9 @@ export interface ComputedLeg {
   legId: string
   /** Wind Correction Angle in °, signiert (+ = Kurskorrektur nach rechts/Steuerbord). */
   wca: number
-  /** Magnetic Course = TC − VAR, 0–359. */
+  /** Magnetic Course = TC + VAR, 0–359. */
   mc: number
-  /** Magnetic Heading = TH − VAR, 0–359. */
+  /** Magnetic Heading = TH + VAR, 0–359. */
   mh: number
   /**
    * True Heading = TC + WCA, 0–359. Nur eine Zwischengröße zur Ableitung

@@ -44,15 +44,19 @@ describe('windTriangle', () => {
 })
 
 describe('courseChain', () => {
-  it('adds WCA to TC to get TH, and subtracts easterly VAR to get MH/MC', () => {
-    const { th, mh, mc } = courseChain(90, 5, 3)
+  // VAR-Vorzeichen seit Phase 20: negativ = östliche Missweisung, positiv
+  // = westliche — wie in SkyDemon direkt ablesbar (siehe Doc-Kommentar an
+  // courseChain). Addiert statt subtrahiert, daher VAR hier negativ für
+  // "östlich".
+  it('adds WCA to TC to get TH, and adds (negative) easterly VAR to get MH/MC', () => {
+    const { th, mh, mc } = courseChain(90, 5, -3)
     expect(th).toBe(95)
     expect(mh).toBe(92)
     expect(mc).toBe(87)
   })
 
-  it('subtracting a negative (westerly) VAR effectively adds it', () => {
-    const { mh, mc } = courseChain(90, 0, -3)
+  it('adds a positive (westerly) VAR straight to TH/TC', () => {
+    const { mh, mc } = courseChain(90, 0, 3)
     expect(mh).toBe(93)
     expect(mc).toBe(93)
   })
@@ -60,9 +64,9 @@ describe('courseChain', () => {
   it('normalizes results into 0–359', () => {
     const { th } = courseChain(359, 5, 0)
     expect(th).toBe(4)
-    const { mc } = courseChain(2, 0, -5)
+    const { mc } = courseChain(2, 0, 5)
     expect(mc).toBe(7)
-    const { mh } = courseChain(2, 0, 5)
+    const { mh } = courseChain(2, 0, -5)
     expect(mh).toBe(357)
   })
 })

@@ -28,6 +28,10 @@ interface NumberCellProps {
   value: number | undefined
   onChange: (v: number | undefined) => void
   widthCh?: number
+  /** Optionaler Tooltip (z. B. Vorzeichenkonvention bei VAR, siehe
+   * columns.ts::COLUMN_HINTS) — zusätzlich zum ⓘ-Hinweis in der
+   * Kopfzeile, damit er auch beim Fokus auf das Feld selbst sichtbar ist. */
+  title?: string
 }
 
 /**
@@ -46,7 +50,7 @@ interface NumberCellProps {
  * getippt ist — z. B. ließ sich TAS so nie unter den globalen Standard von
  * 100 kt eingeben.
  */
-export function NumberCell({ label, value, onChange, widthCh = 5 }: NumberCellProps) {
+export function NumberCell({ label, value, onChange, widthCh = 5, title }: NumberCellProps) {
   const [draft, setDraft] = useState(value === undefined ? '' : String(value))
   const [focused, setFocused] = useState(false)
   // Entwurf während des Renderns statt in einem Effect an den externen
@@ -66,6 +70,7 @@ export function NumberCell({ label, value, onChange, widthCh = 5 }: NumberCellPr
       type="text"
       inputMode="decimal"
       aria-label={label}
+      title={title}
       value={draft}
       onFocus={() => setFocused(true)}
       onChange={(e) => {

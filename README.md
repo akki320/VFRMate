@@ -441,6 +441,37 @@ npx vitest run    # Unit-Tests
   sich mit korrekten Kontrollpunktnamen, TC- und Distanzwerten (Gesamt-
   strecke stimmt mit der Summe der Legs überein), ohne Konsolen-/
   Seitenfehler. tsc/Lint/Build sauber.
+- **Phase 20 (abgeschlossen):** VAR-Vorzeichenkonvention gedreht, um
+  Verwechslungen beim Übertragen aus SkyDemon auszuschließen. Bisher
+  (seit Phase 1): positiv = östliche Missweisung, Formel subtrahiert
+  (`MC = TC − VAR`) — lehrbuchkonform, aber genau entgegengesetzt zu dem,
+  was SkyDemon selbst anzeigt (SkyDemon zeigt 4°E als "−4"). Nutzer
+  reproduzierte das direkt an einem realen Beispiel (EDKL Leverkusen,
+  TC 292°/Wind 173°/8kt/TAS 114kt → SkyDemon MH 284°, VFRMate kam vorher
+  nur mit VAR=+4 auf denselben Wert, SkyDemon selbst zeigt dafür aber
+  "−4" an) und bestand zu Recht auf einer Änderung, da das Vorzeichen so
+  beim Abtippen aus SkyDemon aktiv in die Irre führte (ein vertauschtes
+  Vorzeichen verdoppelt den Kursfehler — sicherheitsrelevant).
+
+  Jetzt: **negativ = östliche, positiv = westliche Missweisung**, Formel
+  addiert (`MC = TC + VAR`, `MH = TC + WCA + VAR`) — ein aus SkyDemon
+  abgelesener Wert lässt sich unverändert eintragen, kein gedankliches
+  Vorzeichen-Umdrehen mehr nötig. Geändert in `domain/flightPlan.ts`
+  (`computeMc`/`computeMh`) und `domain/navigation.ts::courseChain`
+  (dieselbe Drehung auch dort, obwohl aktuell nicht an die UI
+  angebunden, für Konsistenz falls später reaktiviert). Neuer
+  `COLUMN_HINTS`-Mechanismus in `columns.ts`: ein "ⓘ"-Symbol neben der
+  VAR-Spaltenüberschrift (und als `title`-Tooltip direkt am Eingabefeld)
+  erklärt die Konvention direkt in der Tabelle, damit sie beim nächsten
+  Mal nicht erneut zu Verwirrung führt.
+
+  Alle VAR-sensitiven Tests (computeMc/computeMh, courseChain) auf die
+  neue Konvention umgestellt — dieselben physikalischen Szenarien,
+  nur mit gedrehtem VAR-Vorzeichen im Testaufruf, identische erwartete
+  Ergebnisse. Zusätzlich end-to-end per Playwright exakt gegen das vom
+  Nutzer gemeldete Beispiel verifiziert: TC 292, TAS 114, Wind 173/8,
+  VAR −4 ergibt jetzt MH 284° — exakt wie SkyDemon. Alle 115 Tests grün,
+  tsc/Lint/Build sauber.
 
 Die App ist damit funktional vollständig gemäß Auftrag, in der vom
 Nutzer gewünschten vereinfachten Form.

@@ -1,5 +1,5 @@
 import { useFlightStore } from '../../store/flightStore'
-import type { ColumnId } from './columns'
+import { COLUMN_HINTS, type ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { ACTIVE_LIGHT_STYLE, inputClass, NumberCell, ReadOnly, TextCell } from './cells'
 import { formatHoursMinutes } from '../../domain/format'
@@ -118,6 +118,7 @@ export function LegTableRow({ row, visibleColumns, remarksCollapsed }: LegTableR
         return (
           <NumberCell
             label="Missweisung"
+            title={COLUMN_HINTS.var}
             value={resolved.variationDeg}
             onChange={(v) => void updateLeg(leg.id, { variationDeg: v })}
           />

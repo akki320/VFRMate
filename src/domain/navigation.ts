@@ -51,13 +51,20 @@ export function windTriangle(
 }
 
 /**
- * Kurskette: TC → TH = TC + WCA → MH = TH − VAR (bei östlicher/positiver
- * Missweisung) → MC = TC − VAR. Alle Ergebnisse auf 0–359° normalisiert.
+ * Kurskette: TC → TH = TC + WCA → MH = TH + VAR → MC = TC + VAR. Alle
+ * Ergebnisse auf 0–359° normalisiert.
  *
- * Vorzeichenkonvention VAR: östliche Missweisung wird als positiver Wert
- * geführt (VAR > 0 ⇒ rechtweisender Kurs ist größer als der missweisende:
- * "Ost ist am wenigsten" — MH = TH − VAR). Westliche Missweisung ist
- * folglich negativ und wird durch das Minuszeichen automatisch addiert.
+ * Vorzeichenkonvention VAR (Phase 20, auf Nutzerwunsch geändert —
+ * vorher genau umgekehrt): **negativ = östliche Missweisung, positiv =
+ * westliche Missweisung**, sodass VAR direkt zum rechtweisenden Kurs
+ * addiert werden kann ("Ost ist am wenigsten" steckt dadurch schon im
+ * Vorzeichen, kein gesondertes Subtrahieren nötig). Das entspricht der
+ * Konvention gängiger EFBs wie SkyDemon, nicht der in manchen
+ * PPL-Lehrbüchern verbreiteten Konvention mit positivem VAR für Ost
+ * (dort muss man dann aber auch explizit subtrahieren statt addieren —
+ * dasselbe Ergebnis, nur anders verpackt). Wer einen Wert direkt aus
+ * SkyDemon überträgt, kann ihn jetzt unverändert übernehmen, ohne das
+ * Vorzeichen gedanklich umzudrehen.
  */
 export function courseChain(
   tc: number,
@@ -65,8 +72,8 @@ export function courseChain(
   variationDeg: number,
 ): { th: number; mh: number; mc: number } {
   const th = normalizeCourseDeg(tc + wca)
-  const mh = normalizeCourseDeg(th - variationDeg)
-  const mc = normalizeCourseDeg(tc - variationDeg)
+  const mh = normalizeCourseDeg(th + variationDeg)
+  const mc = normalizeCourseDeg(tc + variationDeg)
   return { th, mh, mc }
 }
 

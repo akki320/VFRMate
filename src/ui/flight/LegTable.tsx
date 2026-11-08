@@ -1,6 +1,6 @@
 import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { useFlightStore } from '../../store/flightStore'
-import { COLUMN_IDS, COLUMN_LABELS, COMPUTED_COLUMNS, type ColumnId } from './columns'
+import { COLUMN_HINTS, COLUMN_IDS, COLUMN_LABELS, COMPUTED_COLUMNS, type ColumnId } from './columns'
 import type { FlightTableRow } from './useFlightTableViewModel'
 import { LegTableRow } from './LegTableRow'
 import { CheckpointRow } from './CheckpointRow'
@@ -146,6 +146,11 @@ export function LegTable({ rows, visibleColumns, anchorUtcMinutes, departureAero
                 {COMPUTED_COLUMNS.has(id) && (
                   <span className="ml-1 normal-case" style={{ color: 'var(--text-muted)' }} title="automatisch berechnet">
                     ⚙
+                  </span>
+                )}
+                {COLUMN_HINTS[id] && (
+                  <span className="ml-1 normal-case" style={{ color: 'var(--text-muted)' }} title={COLUMN_HINTS[id]}>
+                    ⓘ
                   </span>
                 )}
               </th>
